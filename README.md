@@ -11,6 +11,7 @@ Release Notes:
 Build Notes:
 ------------
 Windows:
+
 	Requirements:
 		1) Microsoft Visual C++
 		   From: https://support.microsoft.com/en-us/kb/2977003/
@@ -26,7 +27,7 @@ Windows:
 		   From: http://www.cmake.org/
 	
     Building rgbd_pose_estimation:
-	    As the library is composed of a bunch of headers of C++, no compilation is needed
+	    As the library is composed of a bunch of headers of C++, no compilation is needed.
 	
 	Building the example
 	    1) Install the OpenCV 3.0 Library 
