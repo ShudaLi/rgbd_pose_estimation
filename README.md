@@ -1,4 +1,4 @@
-rgbd_pose_estimation (Version 1.0 - 13th of May 2015)
+rgbd_pose_estimation (Version 1.1 - 11th of Jan 2016)
 ---------------------------------------
 Coming soon...
 
