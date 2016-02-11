@@ -1,8 +1,8 @@
 
-
+#define _USE_MATH_DEFINES
 
 #include "Eigen/Core"
-#include "Utility.hpp"
+#include "common/Converters.hpp"
 #include "AbsoluteOrientation.hpp"
 #include "AbsoluteOrientationNormal.hpp"
 #include "PnPPoseAdapter.hpp"
@@ -20,6 +20,7 @@
 using namespace Eigen;
 using namespace std;
 using namespace cv;
+using namespace btl::utility;
 
 void cvtCV(const MatrixXd& Q_, const MatrixXd U_, const double& f_, Mat* m3D_, Mat* m2D_){
 	m2D_->create(1, U_.cols(), CV_64FC2);
@@ -51,7 +52,7 @@ void cvtEigen(const Mat& m, const Mat& t, Matrix3d* mm, Vector3d* tt) {
 void test_all(){
 	cout << "%test_all()" << endl;
 	const Vector3d t = generate_random_translation_uniform<double>(5.0);
-	const Matrix3d R = generate_random_rotation<double>(M_PI / 2, false);
+	const SO3Group<double> R = generate_random_rotation<double>(M_PI / 2, false);
 
 	//cout << t << endl;
 	//cout << R << endl;
@@ -108,18 +109,6 @@ void test_all(){
 
 	vector<vector<int> > combination;
 
-	//for (int a = 0; a < v_noise_3d.size(); a++)	{
-	//	for (int b = 0; b < v_noise_2d.size(); b++) {
-	//		for (int c = 0; c < v_noise_normal.size(); c++) {
-	//			vector<int> sub;
-	//			sub.push_back(a);
-	//			sub.push_back(b);
-	//			sub.push_back(c);
-	//			combination.push_back(sub);
-	//		}
-	//	}
-	//}
-
 	for (int a = 0; a < v_noise_3d.size(); a++)	{
 		vector<int> sub;
 		sub.push_back(a);
@@ -171,7 +160,7 @@ void test_all(){
 						simulate_kinect_2d_3d_nl_correspondences<double>(R, t, total, n2d, or_2d, or_3d, nnl, or_nl, min_depth, max_depth, f,
 							&Q, &M, &P, &N, &U, &all_weights);
 					}
-					NormalAOPoseAdapter<double> adapter(U, P, N, Q, M);
+					NormalAOPoseAdapter<double, double> adapter(U, P, N, Q, M);
 
 					//convert to opencv data structure
 					updated_iter = iteration;
@@ -188,7 +177,7 @@ void test_all(){
 					Matrix3d RR;
 					Vector3d tt;
 					cvtEigen(cvmRw, tvec, &RR, &tt);
-					adapter.setR(RR);
+					adapter.setRcw(RR);
 					adapter.sett(tt);
 					e_l.col(ii) = calc_percentage_err<double>(R, t, &adapter);
 
