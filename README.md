@@ -29,7 +29,7 @@ Windows:
 		   From: http://www.cmake.org/
 	
     Building rgbd_pose_estimation:
-	    As the library is composed of a bunch of headers of C++, no compilation is needed.
+	    As the library is composed of a bunch of headers of C++, no linking is needed.
 	
 	Building the example
 	    1) Install the OpenCV 3.0 Library 
@@ -38,5 +38,26 @@ Windows:
 		4) Press 'configure' and then 'generate' button
 		5) Open the 'RGBDPoseEstimation.sln' and compile it.
 		
-    
+Linux:
+	Requirements:
+		2) Boost
+		   From: http://www.boost.org/
+		3) Eigen
+		   From: http://eigen.tuxfamily.org/index.php?title=Main_Page
+		   
+	Optional requirements for the sample codes:
+		1) OpenCV 3.0 
+		   From: http://opencv.org/
+	    2) CMake and CMake-GuI (To create project files)
+		   From: http://www.cmake.org/
+	
+    Building rgbd_pose_estimation:
+	    As the library is composed of a bunch of headers of C++, no linking is needed.
+	
+	Building the example
+	    1) Install the OpenCV 3.0 Library 
+		2) Create a folder 'build' 
+		3) Run CMake-Gui and specify the path to dependences. 
+		4) Press 'configure' and then 'generate' button
+		5) make
 	   
