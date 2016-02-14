@@ -39,10 +39,11 @@ Windows:
 		5) Open the 'RGBDPoseEstimation.sln' and compile it.
 		
 Linux:
+
 	Requirements:
-		2) Boost
+		1) Boost
 		   From: http://www.boost.org/
-		3) Eigen
+		2) Eigen
 		   From: http://eigen.tuxfamily.org/index.php?title=Main_Page
 		   
 	Optional requirements for the sample codes:
