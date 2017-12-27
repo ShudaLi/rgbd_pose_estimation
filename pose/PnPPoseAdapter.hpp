@@ -23,20 +23,20 @@ using namespace Eigen;
  * an AbsoluteAdapter. This child-class is for the central case and holds data
  * in form of references to opengv-types.
  */
-template<typename POSE_T, typename POINT_T>
-class PnPPoseAdapter : public PoseAdapterBase<POSE_T, POINT_T>
+template<typename Tp>
+class PnPPoseAdapter : public PoseAdapterBase<Tp>
 {
 protected:
-	using PoseAdapterBase<POSE_T, POINT_T>::_t_w;
-	using PoseAdapterBase<POSE_T, POINT_T>::_R_cw;
+	using PoseAdapterBase<Tp>::_t_w;
+	using PoseAdapterBase<Tp>::_R_cw;
 
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  typedef typename PoseAdapterBase<POSE_T, POINT_T>::Vector3 Vector3;
-  typedef typename PoseAdapterBase<POSE_T, POINT_T>::SO3_T SO3_T;
-  typedef typename PoseAdapterBase<POSE_T, POINT_T>::Point3 Point3;
+  typedef typename PoseAdapterBase<Tp>::Vector3 Vector3;
+  typedef typename PoseAdapterBase<Tp>::SO3_T SO3_T;
+  typedef typename PoseAdapterBase<Tp>::Point3 Point3;
 
-  typedef Matrix<POINT_T, Dynamic, Dynamic> MatrixX;
+  typedef Matrix<Tp, Dynamic, Dynamic> MatrixX;
 
   /**
    * \brief Constructor. See protected class-members to understand parameters
@@ -69,7 +69,7 @@ public:
   /** See parent-class */
   virtual Point3 getBearingVector( int index ) const;
   /** See parent-class */
-  virtual POINT_T getWeight( int index ) const;
+  virtual Tp getWeight( int index ) const;
   /** See parent-class */
   virtual Point3 getPointGlob( int index ) const;
   /** See parent-class */
@@ -81,14 +81,14 @@ public:
   const vector<short>& getInlierIdx() const { return _vInliersPnP;}
   void cvtInlier();
 
-  POINT_T getError(int index) const;
+  Tp getError(int index) const;
 
   void setMaxVotes(int votes){  _max_votes = votes;  };
 
   int getMaxVotes() { return _max_votes; };
 
   bool isInlier23(int index) const;
-  POINT_T weight23(int index) const;
+  Tp weight23(int index) const;
 protected:
 	/** Reference to the bearing-vectors expressed in the camera-frame */
 	const MatrixX & _bearingVectors; //normalized 2d homogeneous coordinate
@@ -103,11 +103,11 @@ protected:
 };
 
 
-template <typename POSE_T, typename POINT_T>
-PnPPoseAdapter<POSE_T, POINT_T>::PnPPoseAdapter(
+template <typename Tp>
+PnPPoseAdapter<Tp>::PnPPoseAdapter(
 	const MatrixX & bearingVectors,
 	const MatrixX & points) :
-	PoseAdapterBase<POSE_T, POINT_T>(),
+	PoseAdapterBase<Tp>(),
 	_bearingVectors(bearingVectors),
 	_points_g(points)
 {
@@ -115,12 +115,12 @@ PnPPoseAdapter<POSE_T, POINT_T>::PnPPoseAdapter(
 	_inliers.setOnes();
 }
 
-template <typename POSE_T, typename POINT_T>
-PnPPoseAdapter<POSE_T, POINT_T>::PnPPoseAdapter(
+template <typename Tp>
+PnPPoseAdapter<Tp>::PnPPoseAdapter(
 	const MatrixX & bearingVectors,
 	const MatrixX & points,
 	const SO3_T & R) :
-	PoseAdapterBase<POSE_T, POINT_T>(R),
+	PoseAdapterBase<Tp>(R),
 	_bearingVectors(bearingVectors),
 	_points_g(points)
 {
@@ -128,13 +128,13 @@ PnPPoseAdapter<POSE_T, POINT_T>::PnPPoseAdapter(
 	_inliers.setOnes();
 }
 
-template <typename POSE_T, typename POINT_T>
-PnPPoseAdapter<POSE_T, POINT_T>::PnPPoseAdapter(
+template <typename Tp>
+PnPPoseAdapter<Tp>::PnPPoseAdapter(
 	const MatrixX & bearingVectors,
 	const MatrixX & points,
 	const Vector3 & t,
 	const SO3_T & R) :
-	PoseAdapterBase<POSE_T, POINT_T>(t, R),
+	PoseAdapterBase<Tp>(t, R),
 	_bearingVectors(bearingVectors),
 	_points_g(points)
 {
@@ -142,8 +142,8 @@ PnPPoseAdapter<POSE_T, POINT_T>::PnPPoseAdapter(
 	_inliers.setOnes();
 }
 
-template <typename POSE_T, typename POINT_T>
-typename PnPPoseAdapter<POSE_T, POINT_T>::Point3 PnPPoseAdapter<POSE_T, POINT_T>::
+template <typename Tp>
+typename PnPPoseAdapter<Tp>::Point3 PnPPoseAdapter<Tp>::
 getBearingVector(int index) const
 {
 	assert(index < _bearingVectors.cols());
@@ -151,62 +151,62 @@ getBearingVector(int index) const
 }
 
 
-template <typename POSE_T, typename POINT_T>
-POINT_T PnPPoseAdapter<POSE_T, POINT_T>::
+template <typename Tp>
+Tp PnPPoseAdapter<Tp>::
 getWeight(int index) const
 {
-	return POINT_T(1.);
+	return Tp(1.);
 }
 
-template <typename POSE_T, typename POINT_T>
-typename PnPPoseAdapter<POSE_T, POINT_T>::Point3 PnPPoseAdapter<POSE_T, POINT_T>::
+template <typename Tp>
+typename PnPPoseAdapter<Tp>::Point3 PnPPoseAdapter<Tp>::
 getPointGlob(int index) const
 {
 	assert(index < _bearingVectors.cols());
 	return _points_g.col(index);
 }
 
-template<typename POSE_T, typename POINT_T>
-bool PnPPoseAdapter<POSE_T, POINT_T>::isInlier23(int index) const
+template<typename Tp>
+bool PnPPoseAdapter<Tp>::isInlier23(int index) const
 {
 	assert(index < _inliers.rows());
 	return _inliers(index) == 1;
 }
 
-template<typename POSE_T, typename POINT_T>
-POINT_T PnPPoseAdapter<POSE_T, POINT_T>::weight23(int index) const
+template<typename Tp>
+Tp PnPPoseAdapter<Tp>::weight23(int index) const
 {
-	if (!_weights.rows()) return POINT_T(1.0);
+	if (!_weights.rows()) return Tp(1.0);
 	else{
 		assert(index < _weights.rows());
-		return POINT_T(_weights(index)) / numeric_limits<short>::max();
+		return Tp(_weights(index)) / numeric_limits<short>::max();
 	}
 }
 
-template <typename POSE_T, typename POINT_T>
-int PnPPoseAdapter<POSE_T, POINT_T>::getNumberCorrespondences() const
+template <typename Tp>
+int PnPPoseAdapter<Tp>::getNumberCorrespondences() const
 {
 	return _bearingVectors.cols();
 }
 
-template <typename POSE_T, typename POINT_T>
-void PnPPoseAdapter<POSE_T, POINT_T>::setInlier(const Matrix<short, Dynamic, Dynamic>& inliers)
+template <typename Tp>
+void PnPPoseAdapter<Tp>::setInlier(const Matrix<short, Dynamic, Dynamic>& inliers)
 {
 	assert(inliers.rows() == _inliers.rows());
 	//_inliers = inliers.col(0);
 	memcpy(_inliers.data(), inliers.data(), inliers.rows()*2);
 }
 
-template <typename POSE_T, typename POINT_T>
-POINT_T PnPPoseAdapter<POSE_T, POINT_T>::getError(int index) const
+template <typename Tp>
+Tp PnPPoseAdapter<Tp>::getError(int index) const
 {
 	Point3 Xc = _Rcw * getPointGlob(index) + _t;
 	Xc.normalize();
 	return Xc.cross(getBearingVector(index)).norm();
 }
 
-template <typename POSE_T, typename POINT_T>
-void PnPPoseAdapter<POSE_T, POINT_T>::setWeights(const Matrix<short, Dynamic, Dynamic>& weights)
+template <typename Tp>
+void PnPPoseAdapter<Tp>::setWeights(const Matrix<short, Dynamic, Dynamic>& weights)
 {
 	_weights = weights.col(0);
 	//memcpy(_weights.data(), weights.data(), weights.rows() * 2);
@@ -214,14 +214,14 @@ void PnPPoseAdapter<POSE_T, POINT_T>::setWeights(const Matrix<short, Dynamic, Dy
 	return;
 }
 
-template <typename POSE_T, typename POINT_T>
-void PnPPoseAdapter<POSE_T, POINT_T>::printInlier() const
+template <typename Tp>
+void PnPPoseAdapter<Tp>::printInlier() const
 {
 	cout << _inliers.transpose() << endl;
 }
 
-template <typename POSE_T, typename POINT_T>
-void PnPPoseAdapter<POSE_T, POINT_T>::cvtInlier()
+template <typename Tp>
+void PnPPoseAdapter<Tp>::cvtInlier()
 {
 	_vInliersPnP.clear();
 	_vInliersPnP.reserve(getNumberCorrespondences());

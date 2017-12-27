@@ -1,5 +1,5 @@
-#ifndef BTL_RAND_GENERATOR_HEADER
-#define BTL_RAND_GENERATOR_HEADER
+#ifndef _RAND_GENERATOR_HEADER_
+#define _RAND_GENERATOR_HEADER_
 
 #include <se3.hpp>
 #include <time.h>

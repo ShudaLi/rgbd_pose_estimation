@@ -160,7 +160,7 @@ void test_all(){
 						simulate_kinect_2d_3d_nl_correspondences<double>(R, t, total, n2d, or_2d, or_3d, nnl, or_nl, min_depth, max_depth, f,
 							&Q, &M, &P, &N, &U, &all_weights);
 					}
-					NormalAOPoseAdapter<double, double> adapter(U, P, N, Q, M);
+					NormalAOPoseAdapter<double> adapter(U, P, N, Q, M);
 
 					//convert to opencv data structure
 					updated_iter = iteration;

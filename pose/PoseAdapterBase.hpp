@@ -25,15 +25,15 @@ using namespace Eigen;
  * pose, Derived classes may hold the data in any user-specific
  * format, and adapt to opengv-types.
  */
-template<typename POSE_T, typename POINT_T>
+template<typename Tp>
 class PoseAdapterBase
 {
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-	typedef Matrix<POSE_T, 3, 1> Vector3;
-	typedef Sophus::SO3<POSE_T> SO3_T;
+	typedef Matrix<Tp, 3, 1> Vector3;
+	typedef Sophus::SO3<Tp> SO3_T;
 
-	typedef Matrix<POINT_T, 3, 1> Point3;
+	typedef Matrix<Tp, 3, 1> Point3;
 
 	/**
    * \brief Constructor.
@@ -85,7 +85,7 @@ public:
    * \param[in] index The serialized index of the correspondence.
    * \return The corresponding weight.
    */
-  virtual POINT_T getWeight( int index ) const = 0;
+  virtual Tp getWeight( int index ) const = 0;
 
   /**
    * \brief Retrieve the world point of a correspondence.
@@ -122,9 +122,9 @@ public:
    */
   void setRcw(const SO3_T& R) { _R_cw = R; };
 
-  void setFocal(const POSE_T fx, const POSE_T fy) { _fx = fx; _fy = fy; };
+  void setFocal(const Tp fx, const Tp fy) { _fx = fx; _fy = fy; };
 
-  POSE_T getFocal() const { return (_fx + _fy) /2; };
+  Tp getFocal() const { return (_fx + _fy) /2; };
 
 
 protected:
@@ -138,7 +138,7 @@ protected:
 	SO3_T _R_cw;
 	/** The known camera internal parameters: focal length and principle points
 	*/
-	POSE_T _fx, _fy, _cx, _cy;
+	Tp _fx, _fy, _cx, _cy;
 
 };
 
