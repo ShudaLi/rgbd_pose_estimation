@@ -6,7 +6,6 @@
 #include "P3P.hpp"
 
 using namespace Eigen;
-using namespace cv;
 
 template< typename Tp >
 Matrix<Tp, 2, 1> calc_percentage_err(const Sophus::SO3<Tp>& R_cw_, const Matrix<Tp, 3, 1>& t_w_, const PoseAdapterBase<Tp>* p_ad){

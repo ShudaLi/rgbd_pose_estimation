@@ -2,7 +2,7 @@
 #define _USE_MATH_DEFINES
 
 #include <Eigen/Core>
-#include "common/Converters.hpp"
+//#include "common/Converters.hpp"
 #include "AbsoluteOrientation.hpp"
 #include "AbsoluteOrientationNormal.hpp"
 #include "PnPPoseAdapter.hpp"
@@ -20,7 +20,7 @@
 using namespace Eigen;
 using namespace std;
 using namespace cv;
-using namespace btl::utility;
+//using namespace btl::utility;
 
 void cvtCV(const MatrixXd& Q_, const MatrixXd U_, const double& f_, Mat* m3D_, Mat* m2D_){
 	m2D_->create(1, U_.cols(), CV_64FC2);

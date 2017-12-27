@@ -5,7 +5,6 @@
 #include "PnPPoseAdapter.hpp"
 
 using namespace Eigen;
-using namespace cv;
 
 template< typename Tp >
 std::vector<Tp> o4_roots(const Matrix<Tp, Dynamic, Dynamic> & p_)

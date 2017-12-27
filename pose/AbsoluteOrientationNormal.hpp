@@ -1,7 +1,7 @@
 #ifndef BTL_AO_NORM_POSE_HEADER
 #define BTL_AO_NORM_POSE_HEADER
 
-#include "common/OtherUtil.hpp"
+//#include "common/OtherUtil.hpp"
 #include <limits>
 #include <Eigen/Dense>
 #include "NormalAOPoseAdapter.hpp"

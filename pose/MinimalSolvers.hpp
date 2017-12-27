@@ -2,12 +2,10 @@
 #ifndef BTL_MIN_SOLV_HEADER
 #define BTL_MIN_SOLV_HEADER
 
-#include "common/OtherUtil.hpp"
 #include <Eigen/Dense>
 #include <se3.hpp>
 
 using namespace Eigen;
-using namespace cv;
 
 template< typename T > 
 void ms(const Matrix< T, 3, 1 >& Aw_, const Matrix< T, 3, 1 >& Bw_,

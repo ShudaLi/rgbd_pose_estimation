@@ -5,6 +5,7 @@
 #include <time.h>
 #include <limits>
 #include <random>
+#include "common/OtherUtil.hpp"
 
 using namespace Eigen;
 using namespace std;

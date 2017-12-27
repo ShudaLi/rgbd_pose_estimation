@@ -10,14 +10,6 @@
 #include <complex>
 #include <string>
 
-//#include <Eigen/Dense>
-
-
-#include <opencv2/core.hpp>
-namespace btl
-{
-namespace utility
-{
 
 #define SMALL 1e-50 // a small value
 #define BTL_DOUBLE_MAX 10e20
@@ -149,30 +141,5 @@ public:
 };//class RandElement
 
 
-template< class T >
-void rand_sel_2(int nSelections_, int nGroupSize_, cv::Mat* p_rand_idx)
-{
-	cv::Mat& rand_idx = *p_rand_idx; rand_idx.create(nSelections_, 1, CV_16UC2);
-	btl::utility::RandomElements<int> re(nGroupSize_*nGroupSize_);
-	vector<T> raw_idx;
-	re.run(nSelections_ + 10, &raw_idx);
-	int nSelected = 0;
-	for (vector<int>::const_iterator cit = raw_idx.begin(); cit != raw_idx.end(); cit++){
-		int r = *cit / 100;
-		int c = *cit % 100;
-		if (r != c){
-			
-			rand_idx.template ptr<ushort>(nSelected)[0] = r;
-			rand_idx.template ptr<ushort>(nSelected)[1] = c;
-			nSelected++;
-			if (nSelected >= nSelections_) break;
-		}
-	}
-	if (nSelected < nSelections_) rand_idx.pop_back(nSelections_ - nSelected);
-	return;
-}
-
-}//utility
-}//btl
 
 #endif
