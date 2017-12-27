@@ -34,7 +34,7 @@ void ms(const Matrix< T, 3, 1 >& Aw_, const Matrix< T, 3, 1 >& Bw_,
 
 	Matrix< T, 3, 1 > A1 = ABw.cross(ABc);
 	T theta = asin(A1.norm() / ABw.norm() / ABc.norm());
-	Matrix< T, 3, 3 > R1 = AngleAxis<T>(A1.normalized(), theta).toRotationMatrix();
+	Matrix< T, 3, 3 > R1 = AngleAxis<T>(A1.normalize(), theta).toRotationMatrix();
 
 	Aw_ = R1*Aw_;
 	Bw_ = R1*Bw_;
@@ -89,15 +89,15 @@ void ev(const Matrix<T, 3, 3>& M_, Matrix<T, 3, 1>* pE_, Matrix<T, 3, 3>* pV_=NU
 		Matrix<T, 3, 3> s2 = ((*pE_)(2)*Matrix<T, 3, 3>::Identity() - M_);
 		{
 			Matrix<T, 3, 3> s = s0 * s1;
-			(*pV_).col(2) = s.col(2).normalized();
+			(*pV_).col(2) = s.col(2).normalize();
 		}
 		{
 			Matrix<T, 3, 3> s = s0 * s2;
-			(*pV_).col(1) = s.col(1).normalized();
+			(*pV_).col(1) = s.col(1).normalize();
 		}
 		{
 			Matrix<T, 3, 3> s = s1 * s2;
-			(*pV_).col(0) = s.col(0).normalized();
+			(*pV_).col(0) = s.col(0).normalize();
 		}
 	}
 	return;

@@ -80,7 +80,6 @@ void test_all(){
 
 	double min_depth = 0.4;
 	double max_depth = 8.; //for Gaussian or uniform noise
-	//double max_depth = 3.; //for Kinect noise mode
 	double f = 585.;
 
 

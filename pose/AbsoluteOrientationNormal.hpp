@@ -24,7 +24,7 @@ Matrix<Tp, 3, 1> find_opt_cc(NormalAOPoseAdapter<Tp>& adapter)
 	for (int i = 0; i < adapter.getNumberCorrespondences(); i++)
 	{
 		if (adapter.isInlier23(i)){
-			V3 vr_w = Rwc * adapter.getBearingVector(i).template cast<Tp>();
+			V3 vr_w = Rwc * adapter.getBearingVector(i);
 			M3 A;
 			A(0,0) = 1 - vr_w(0)*vr_w(0);
 			A(1,0) = A(0,1) = - vr_w(0)*vr_w(1);
@@ -32,7 +32,7 @@ Matrix<Tp, 3, 1> find_opt_cc(NormalAOPoseAdapter<Tp>& adapter)
 			A(1,1) = 1 - vr_w(1)*vr_w(1);
 			A(2,1) = A(1,2) = - vr_w(1)*vr_w(2);
 			A(2,2) = 1 - vr_w(2)*vr_w(2);
-			V3 b = A * adapter.getPointGlob(i).template cast<Tp>();
+			V3 b = A * adapter.getPointGlob(i);
 			AA += A;
 			bb += b;
 		}
@@ -84,11 +84,11 @@ void nl_2p( const Matrix<Tp,3,1>& pt1_c, const Matrix<Tp,3,1>& nl1_c, const Matr
 	typedef Sophus::SO3<Tp> ROTATION;
 	typedef Sophus::SE3<Tp> RT;
 
-	V3 c_w = pt1_w.template cast<Tp>(); // c_w is the origin of coordinate g w.r.t. world
+	V3 c_w = pt1_w; // c_w is the origin of coordinate g w.r.t. world
 
 	Tp alpha = acos(nl1_w(0)); // rotation nl1_c to x axis (1,0,0)
 	V3 axis( 0, nl1_w(2), -nl1_w(1)); //rotation axis between nl1_c to x axis (1,0,0) i.e. cross( nl1_w, x );
-	axis.normalized();
+	axis.normalize();
 
 	//verify quaternion and rotation matrix
 	Quaternion<Tp> q_g_f_w(AngleAxis<Tp>(alpha, axis));
@@ -96,13 +96,13 @@ void nl_2p( const Matrix<Tp,3,1>& pt1_c, const Matrix<Tp,3,1>& nl1_c, const Matr
 	ROTATION R_g_f_w(q_g_f_w);
 	//cout << R_g_f_w << endl;
 
-	V3 nl_x = R_g_f_w * nl1_w.template cast<Tp>();
-	axis.normalized();
+	V3 nl_x = R_g_f_w * nl1_w;
+	axis.normalize();
 
-	V3 c_c = pt1_c.template cast<Tp>();
+	V3 c_c = pt1_c;
 	Tp beta = acos(nl1_c(0)); //rotation nl1_w to x axis (1,0,0)
 	V3 axis2( 0, nl1_c(2), -nl1_c(1) ); //rotation axis between nl1_m to x axis (1,0,0) i.e. cross( nl1_w, x );
-	axis2.normalized();
+	axis2.normalize();
 
 	Quaternion<Tp> q_gp_f_c(AngleAxis<Tp>(beta, axis2));
 	//cout << q_gp_f_c << endl;
@@ -113,8 +113,8 @@ void nl_2p( const Matrix<Tp,3,1>& pt1_c, const Matrix<Tp,3,1>& nl1_c, const Matr
 	//	print<T, Vector3>(nl_x);
 	//}
 
-	V3 pt2_g = R_g_f_w * (pt2_w.template cast<Tp>() - c_w); pt2_g(0) = Tp(0);  pt2_g.normalized();
-	V3 pt2_gp = R_gp_f_c * (pt2_c.template cast<Tp>() - c_c); pt2_gp(0) = Tp(0);  pt2_gp.normalized();
+	V3 pt2_g = R_g_f_w * (pt2_w - c_w); pt2_g(0) = Tp(0);  pt2_g.normalize();
+	V3 pt2_gp = R_gp_f_c * (pt2_c - c_c); pt2_gp(0) = Tp(0);  pt2_gp.normalize();
 
 	Tp gamma = acos(pt2_g.dot(pt2_gp)); //rotate pt2_g to pt2_gp;
 	V3 axis3(1,0,0); 
@@ -243,14 +243,14 @@ void nl_kneip_ransac(NormalAOPoseAdapter<Tp>& adapter, const Tp thre_2d_, const 
 		for (int c = 0; c < adapter.getNumberCorrespondences(); c++) {
 			if (adapter.isValid(c)){
 				//with normal data
-				Tp cos_alpha = adapter.getNormalCurr(c).dot(solution_kneip.so3().template cast<Tp>() * adapter.getNormalGlob(c));
+				Tp cos_alpha = adapter.getNormalCurr(c).dot(solution_kneip.so3() * adapter.getNormalGlob(c));
 				if (cos_alpha > cos_nl_thre){
 					inliers_kneip(c, 2) = 1;
 					votes_kneip++;
 				}
 			}
 			//with 2d
-			pc = solution_kneip.so3().template cast<Tp>() * adapter.getPointGlob(c) + solution_kneip.translation().template cast<Tp>();// transform pw into pc
+			pc = solution_kneip.so3() * adapter.getPointGlob(c) + solution_kneip.translation();// transform pw into pc
 			pc = pc / pc.norm(); //normalize pc
 
 			//compute the score
@@ -320,13 +320,13 @@ void nl_shinji_ransac(NormalAOPoseAdapter<Tp>& adapter, const Tp thre_3d_, const
 			for (int c = 0; c < adapter.getNumberCorrespondences(); c++) {
 				if (adapter.isValid(c)){
 					//voted by N-N correspondences
-					Tp cos_alpha = adapter.getNormalCurr(c).dot(itr->so3().template cast<Tp>() * adapter.getNormalGlob(c));
+					Tp cos_alpha = adapter.getNormalCurr(c).dot(itr->so3() * adapter.getNormalGlob(c));
 					if (cos_alpha > cos_nl_thre){
 						inliers(c, 2) = 1;
 						votes++;
 					}
 					//voted by 3-3 correspondences
-					eivE = adapter.getPointCurr(c) - (itr->so3().template cast<Tp>() * adapter.getPointGlob(c) + itr->translation().template cast<Tp>());
+					eivE = adapter.getPointCurr(c) - (itr->so3() * adapter.getPointGlob(c) + itr->translation());
 					if (eivE.norm() < thre_3d_){
 						inliers(c, 1) = 1;
 						votes++;
@@ -395,21 +395,21 @@ void nl_shinji_kneip_ransac(NormalAOPoseAdapter<Tp>& adapter,
 			for (int c = 0; c < adapter.getNumberCorrespondences(); c++) {
 				if (adapter.isValid(c)){
 					//with normal data
-					Tp cos_alpha = adapter.getNormalCurr(c).dot(itr->so3().template cast<Tp>() * adapter.getNormalGlob(c));
+					Tp cos_alpha = adapter.getNormalCurr(c).dot(itr->so3() * adapter.getNormalGlob(c));
 					if (cos_alpha > cos_nl_thre){
 						inliers(c, 2) = 1;
 						votes++;
 					}
 				
 					//with 3d data
-					eivE = adapter.getPointCurr(c) - (itr->so3().template cast<Tp>() * adapter.getPointGlob(c) + itr->translation().template cast<Tp>());
+					eivE = adapter.getPointCurr(c) - (itr->so3() * adapter.getPointGlob(c) + itr->translation());
 					if (eivE.norm() < thre_3d_){
 						inliers(c, 1) = 1;
 						votes++;
 					}
 				}
 				//with 2d
-				pc = itr->so3().template cast<Tp>() * adapter.getPointGlob(c) + itr->translation().template cast<Tp>();// transform pw into pc
+				pc = itr->so3() * adapter.getPointGlob(c) + itr->translation();// transform pw into pc
 				pc = pc / pc.norm(); //normalize pc
 
 				//compute the score
@@ -456,8 +456,8 @@ void nl_shinji_kneip_ls(NormalAOPoseAdapter<Tp>& adapter)
 	for (int nCount = 0; nCount < adapter.getNumberCorrespondences(); nCount++){
 		if (adapter.isInlier33(nCount)){
 			Tp v = adapter.weight33(nCount);
-			Cw += (v * adapter.getPointGlob(nCount).template cast<Tp>());
-			Cc += (v * adapter.getPointCurr(nCount).template cast<Tp>());
+			Cw += (v * adapter.getPointGlob(nCount));
+			Cc += (v * adapter.getPointCurr(nCount));
 			TV += v; N++;
 		}
 	}
@@ -482,21 +482,21 @@ void nl_shinji_kneip_ls(NormalAOPoseAdapter<Tp>& adapter)
 		for (int nC = 0; nC < adapter.getNumberCorrespondences(); nC++){
 			if (adapter.isInlier23(nC)){
 				Tp w = adapter.weight23(nC);
-				Aw = adapter.getPointGlob(nC).template cast<Tp>() - c_opt; Aw.normalize();
-				Ac = adapter.getBearingVector(nC).template cast<Tp>();
+				Aw = adapter.getPointGlob(nC) - c_opt; Aw.normalize();
+				Ac = adapter.getBearingVector(nC);
 				M23 += (w * Ac * Aw.transpose());
 				TW += w;  K++;
 			}
 			if (adapter.isInlier33(nC)){
 				Tp v = adapter.weight33(nC);
-				Aw = adapter.getPointGlob(nC).template cast<Tp>() - Cw;
-				Ac = adapter.getPointCurr(nC).template cast<Tp>() - Cc; sigma_w_sqr += (v*Ac.squaredNorm());
+				Aw = adapter.getPointGlob(nC) - Cw;
+				Ac = adapter.getPointCurr(nC) - Cc; sigma_w_sqr += (v*Ac.squaredNorm());
 				M33 += (v * Ac * Aw.transpose());
 			}
 			if (adapter.isInlierNN(nC)){
 				Tp lambda = adapter.weightNN(nC);
-				Aw = adapter.getNormalGlob(nC).template cast<Tp>();
-				Ac = adapter.getNormalCurr(nC).template cast<Tp>();
+				Aw = adapter.getNormalGlob(nC);
+				Ac = adapter.getNormalCurr(nC);
 				MNN += (lambda * Ac * Aw.transpose());
 				TL += lambda;  M++;
 			}

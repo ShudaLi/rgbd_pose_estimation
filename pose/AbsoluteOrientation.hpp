@@ -35,8 +35,8 @@ Sophus::SE3<Tp> shinji(
 	//Compute the centroid of each point set
 	Matrix<Tp, 3, 1> Cw(0, 0, 0), Cc(0, 0, 0); //Matrix<float,3,1,0,3,1> = Vector3f
 	for (int nCount = 0; nCount < K; nCount++){
-		Cw += X_w_.col(nCount).template cast<Tp>();
-		Cc += X_c_.col(nCount).template cast<Tp>();
+		Cw += X_w_.col(nCount);
+		Cc += X_c_.col(nCount);
 	}
 	Cw /= (Tp)K;
 	Cc /= (Tp)K;
@@ -47,8 +47,8 @@ Sophus::SE3<Tp> shinji(
 	Matrix<Tp, 3, 3> N;
 	Tp sigma_w_sqr = 0, sigma_c_sqr = 0;
 	for (int nC = 0; nC < K; nC++){
-		Aw = X_w_.col(nC).template cast<Tp>() - Cw; sigma_w_sqr += Aw.norm();
-		Ac = X_c_.col(nC).template cast<Tp>() - Cc; sigma_c_sqr += Ac.norm();
+		Aw = X_w_.col(nC) - Cw; sigma_w_sqr += Aw.norm();
+		Ac = X_c_.col(nC) - Cc; sigma_c_sqr += Ac.norm();
 		N = Ac * Aw.transpose();
 		M += N;
 	}
@@ -115,7 +115,7 @@ void shinji_ransac(AOPoseAdapter<Tp>& adapter,
 		Matrix<short, Dynamic, Dynamic> inliers(adapter.getNumberCorrespondences(),2); inliers.setZero();
 		for (int c = 0; c < adapter.getNumberCorrespondences(); c++) {
 			if (adapter.isValid(c)){
-				Point3 eivE = adapter.getPointCurr(c) - (solution.so3().template cast<Tp>() * adapter.getPointGlob(c) + solution.translation().template cast<Tp>());
+				Point3 eivE = adapter.getPointCurr(c) - (solution.so3() * adapter.getPointGlob(c) + solution.translation());
 				if (eivE.norm() < dist_thre_3d_){
 					inliers(c,1) = 1;
 					votes++;
@@ -224,14 +224,14 @@ void shinji_kneip_ransac(AOPoseAdapter<Tp>& adapter, const Tp dist_thre_3d_, con
 			for (int c = 0; c < adapter.getNumberCorrespondences(); c++) {
 				// voted by 3-3 correspondences
 				if (adapter.isValid(c)){
-					eivE = adapter.getPointCurr(c) - (itr->so3().template cast<Tp>() * adapter.getPointGlob(c) + itr->translation().template cast<Tp>());
+					eivE = adapter.getPointCurr(c) - (itr->so3() * adapter.getPointGlob(c) + itr->translation());
 					if (eivE.norm() < dist_thre_3d_){
 						inliers(c, 1) = 1;
 						votes++;
 					}
 				}
 				// voted by 2-3 correspondences
-				pc = itr->so3().template cast<Tp>() * adapter.getPointGlob(c) + itr->translation().template cast<Tp>();// transform pw into pc
+				pc = itr->so3() * adapter.getPointGlob(c) + itr->translation();// transform pw into pc
 				pc = pc / pc.norm(); //normalize pc
 
 				//compute the score

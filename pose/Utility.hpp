@@ -57,7 +57,6 @@ T matNormL1 ( const std::vector< T >& vMat1_, const std::vector< T >& vMat2_ )
 	return tAccumDiff;
 }
 
-
 template< class T >
 void getNeighbourIdxCylinder(const unsigned short& usRows, const unsigned short& usCols, const T& i, std::vector< T >* pNeighbours_ )
 {

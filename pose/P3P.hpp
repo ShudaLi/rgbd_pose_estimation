@@ -63,9 +63,9 @@ void kneip_main(const Matrix<Tp, Dynamic, Dynamic>& X_w, const Matrix<Tp, Dynami
 
 	p_solutions_->clear();
 
-	Matrix<Tp, 3, 1> P1 = X_w.col(0).template cast<Tp>();
-	Matrix<Tp, 3, 1> P2 = X_w.col(1).template cast<Tp>();
-	Matrix<Tp, 3, 1> P3 = X_w.col(2).template cast<Tp>();
+	Matrix<Tp, 3, 1> P1 = X_w.col(0);
+	Matrix<Tp, 3, 1> P2 = X_w.col(1);
+	Matrix<Tp, 3, 1> P3 = X_w.col(2);
 
 	Matrix<Tp, 3, 1> temp1 = P2 - P1;
 	Matrix<Tp, 3, 1> temp2 = P3 - P1;
@@ -73,9 +73,9 @@ void kneip_main(const Matrix<Tp, Dynamic, Dynamic>& X_w, const Matrix<Tp, Dynami
 	if (temp1.cross(temp2).norm() == 0)
 		return;
 
-	Matrix<Tp, 3, 1> f1 = bv.col(0).template cast<Tp>();
-	Matrix<Tp, 3, 1> f2 = bv.col(1).template cast<Tp>();
-	Matrix<Tp, 3, 1> f3 = bv.col(2).template cast<Tp>();
+	Matrix<Tp, 3, 1> f1 = bv.col(0);
+	Matrix<Tp, 3, 1> f2 = bv.col(1);
+	Matrix<Tp, 3, 1> f3 = bv.col(2);
 
 	Matrix<Tp, 3, 1> e1 = f1;
 	Matrix<Tp, 3, 1> e3 = f1.cross(f2);
@@ -91,9 +91,9 @@ void kneip_main(const Matrix<Tp, Dynamic, Dynamic>& X_w, const Matrix<Tp, Dynami
 
 	if (f3(2, 0) > 0)
 	{
-		f1 = bv.col(1).template cast<Tp>();
-		f2 = bv.col(0).template cast<Tp>();
-		f3 = bv.col(2).template cast<Tp>();
+		f1 = bv.col(1);
+		f2 = bv.col(0);
+		f3 = bv.col(2);
 
 		e1 = f1;
 		e3 = f1.cross(f2);
@@ -106,9 +106,9 @@ void kneip_main(const Matrix<Tp, Dynamic, Dynamic>& X_w, const Matrix<Tp, Dynami
 
 		f3 = RR*f3;
 
-		P1 = X_w.col(1).template cast<Tp>();
-		P2 = X_w.col(0).template cast<Tp>();
-		P3 = X_w.col(2).template cast<Tp>();
+		P1 = X_w.col(1);
+		P2 = X_w.col(0);
+		P3 = X_w.col(2);
 	}
 
 	Matrix<Tp, 3, 1> n1 = P2 - P1;
@@ -255,7 +255,7 @@ bool kneip(const Matrix<Tp, Dynamic, Dynamic>& X_w_, const Matrix<Tp, Dynamic, D
 	int minIndex = -1;
 	for (int i = 0; i < v_solutions.size(); i++)
 	{
-		Point3 pc = v_solutions[i].so3().template cast<Tp>() * X_w_.col(3) + v_solutions[i].translation().template cast<Tp>();// transform pw into pc
+		Point3 pc = v_solutions[i].so3() * X_w_.col(3) + v_solutions[i].translation();// transform pw into pc
 
 		//compute the score
 		//Vector3 E = pc - adapter.getPointCurr(selected_cols[0]);
@@ -332,7 +332,7 @@ void kneip_ransac( PnPPoseAdapter<Tp>& adapter,	const Tp thre_2d_, int& Iter, Tp
 		for (int i = 0; i < solutions.size(); i++)
 		{
 			Point3 pw = adapter.getPointGlob(selected_cols[3]);
-			Point3 pc = solutions[i].so3().template cast<Tp>() * pw + solutions[i].translation().template cast<Tp>();// transform pw into pc
+			Point3 pc = solutions[i].so3() * pw + solutions[i].translation();// transform pw into pc
 			pc = pc / pc.norm(); //normalize pc
 
 			//compute the score
@@ -354,7 +354,7 @@ void kneip_ransac( PnPPoseAdapter<Tp>& adapter,	const Tp thre_2d_, int& Iter, Tp
 			for (int i = 0; i < adapter.getNumberCorrespondences(); i++)
 			{
 				Point3 Xw = adapter.getPointGlob(i);
-				Point3 Xc = outModel.so3().template cast<Tp>() * Xw + outModel.translation().template cast<Tp>();// transform pw into pc
+				Point3 Xc = outModel.so3() * Xw + outModel.translation();// transform pw into pc
 				Xc = Xc / Xc.norm(); //normalize pc
 
 				//compute the score
