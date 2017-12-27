@@ -7,7 +7,6 @@
 #include <se3.hpp>
 
 using namespace Eigen;
-using namespace Sophus;
 using namespace cv;
 
 template< typename T > 
@@ -15,7 +14,7 @@ void ms(const Matrix< T, 3, 1 >& Aw_, const Matrix< T, 3, 1 >& Bw_,
 	const Matrix< T, 3, 1 >& Nw_, const Matrix< T, 3, 1 >& Mw_,
 	const Matrix< T, 3, 1 >& Ac_, const Matrix< T, 3, 1 >& Bc_,
 	const Matrix< T, 3, 1 >& Nc_, const Matrix< T, 3, 1 >& Mc_,
-	SO3Group< T >* pR_cw_, Matrix< T, 3, 1 >* pTw_){
+	Sophus::SO3< T >* pR_cw_, Matrix< T, 3, 1 >* pTw_){
 	// the minimal solver to solve the 2 pairs of correspondences
 	// where each correspondence contains a 3-D location as well as a surface normal
 	// Xc_ = R_cw * Xw_ + t_w; //R_cw and t_w is defined in world and transform a point in world to local

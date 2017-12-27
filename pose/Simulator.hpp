@@ -4,16 +4,13 @@
 #include <se3.hpp>
 #include <time.h>
 #include <limits>
-#include <boost/random/normal_distribution.hpp>
-#include <boost/random/mersenne_twister.hpp>
-#include <boost/random/variate_generator.hpp>
+#include <random>
 
 using namespace Eigen;
-using namespace Sophus;
 using namespace std;
 
-static boost::variate_generator<boost::mt19937, boost::normal_distribution<> >
-nd_generator(boost::mt19937(0/*time(0)*/), boost::normal_distribution<>()); //normal distribution generator
+std::default_random_engine generator;
+std::normal_distribution<double> distribution(0., 1.0);
 
 template< typename T >
 Matrix<T, 3, 1> generate_random_translation_uniform(T size)
@@ -23,13 +20,13 @@ Matrix<T, 3, 1> generate_random_translation_uniform(T size)
 }
 
 template< typename T >
-SO3Group< T > generate_random_rotation(T max_angle_radian_, bool use_guassian_ = true)
+Sophus::SO3< T > generate_random_rotation(T max_angle_radian_, bool use_guassian_ = true)
 {
 	Matrix<T, 3, 1> rv;
 	if (use_guassian_){
-		rv[0] = nd_generator(); //standard normal distribution
-		rv[1] = nd_generator();
-		rv[2] = nd_generator();
+		rv[0] = distribution(generator); //standard normal distribution
+		rv[1] = distribution(generator);
+		rv[2] = distribution(generator);
 	}
 	else {
 		rv = Matrix< T, Dynamic, Dynamic>::Random(3, 1); //uniform -1. to  1.
@@ -80,12 +77,12 @@ SO3Group< T > generate_random_rotation(T max_angle_radian_, bool use_guassian_ =
 	R3(2, 1) = 0.0;
 	R3(2, 2) = 1.0;
 
-	SO3Group< T > rotation(R3 * R2 * R1);
+	Sophus::SO3< T > rotation(R3 * R2 * R1);
 	return rotation;
 }
 
 template< typename T >
-void simulate_nl_nl_correspondences(const SO3Group<T>& R_cw_, int number_, T noise_nl_, T outlier_ratio_nl_, bool use_guassian_,
+void simulate_nl_nl_correspondences(const Sophus::SO3<T>& R_cw_, int number_, T noise_nl_, T outlier_ratio_nl_, bool use_guassian_,
 	Matrix<T, Dynamic, Dynamic>* pM_, Matrix<T, Dynamic, Dynamic>* pN_, Matrix<T, Dynamic, Dynamic>* pN_gt = NULL,
 	Matrix<short, Dynamic, Dynamic>* p_all_weights_ = NULL)
 {
@@ -176,7 +173,7 @@ Matrix<T, Dynamic, Dynamic> simulate_rand_point_cloud_in_frustum(int number_, T 
 }
 
 template< typename T >
-void simulate_2d_3d_correspondences(const SO3Group<T>& R_cw_, const Matrix<T, 3, 1>& t_w_,
+void simulate_2d_3d_correspondences(const Sophus::SO3<T>& R_cw_, const Matrix<T, 3, 1>& t_w_,
 	int number_, T noise_, T outlier_ratio_, T min_depth_, T max_depth_, T f_, bool use_guassian_,
 	Matrix<T, Dynamic, Dynamic>* pQ_, // *pQ_: points with noise in 3-D world system 
 	Matrix<T, Dynamic, Dynamic>* pU_, // *pU_: 2-D points 
@@ -200,7 +197,7 @@ void simulate_2d_3d_correspondences(const SO3Group<T>& R_cw_, const Matrix<T, 3,
 	for (int i = 0; i < number_; i++) {
 		Matrix<T, 2, 1> rv; //random variable
 		if (use_guassian_)
-			rv = Matrix<T, 2, 1>(nd_generator(), nd_generator());
+			rv = Matrix<T, 2, 1>(distribution(generator), distribution(generator));
 		else
 			rv = MX::Random(2, 1);
 		w(i) = short(3276. / rv.norm());
@@ -237,7 +234,7 @@ void simulate_2d_3d_correspondences(const SO3Group<T>& R_cw_, const Matrix<T, 3,
 }
 
 template< typename T >
-void simulate_2d_3d_nl_correspondences(const SO3Group<T>& R_cw_, const Matrix<T, 3, 1>& t_w_, //rotation and translation in world reference system
+void simulate_2d_3d_nl_correspondences(const Sophus::SO3<T>& R_cw_, const Matrix<T, 3, 1>& t_w_, //rotation and translation in world reference system
 	int number_,  // total number of correspondences
 	T n2D_, T or_2D_, //noise level and outlier ratio for 2-3 correspondences
 	T n3D_, T or_3D_, //noise level and outlier ratio for 3-3 correspondences
@@ -264,7 +261,7 @@ void simulate_2d_3d_nl_correspondences(const SO3Group<T>& R_cw_, const Matrix<T,
 	for (int i = 0; i < number_; i++) {
 		Matrix<T, 3, 1> rv; //random variable
 		if (use_guassian_) //use Guassian noise
-			rv = Matrix<T, 3, 1>(nd_generator(), nd_generator(), nd_generator());
+			rv = Matrix<T, 3, 1>(distribution(generator), distribution(generator), distribution(generator));
 		else
 			rv = Matrix<T, Dynamic, Dynamic>::Random(3, 1);
 		//all_weights(i, 1) = short(rv.norm() / 1.414 * numeric_limits<short>::max()); //simulate weights
@@ -310,7 +307,7 @@ T axial_noise_kinect(T theta_, T z_){
 }
 
 template< typename T >
-void simulate_kinect_2d_3d_nl_correspondences(const SO3Group<T>& R_cw_, const Matrix<T, 3, 1>& t_w_, int number_, 
+void simulate_kinect_2d_3d_nl_correspondences(const Sophus::SO3<T>& R_cw_, const Matrix<T, 3, 1>& t_w_, int number_, 
 	T noise_2d_, T outlier_ratio_2d_, T outlier_ratio_3d_, T noise_nl_, T outlier_ratio_nl_, T min_depth_, T max_depth_, T f_,
 	Matrix<T, Dynamic, Dynamic>* p_pt_w_, 
 	Matrix<T, Dynamic, Dynamic>* p_nl_w_,
@@ -337,7 +334,7 @@ void simulate_kinect_2d_3d_nl_correspondences(const SO3Group<T>& R_cw_, const Ma
 		T z = pt_c_gt.col(i)(2);
 		T sigma_l = lateral_noise_kinect<T>(theta, z, f_);
 		T sigma_a = axial_noise_kinect<T>(theta, z);
-		Matrix<T, 3, 1> random_variable(sigma_l*nd_generator(), sigma_l*nd_generator(), sigma_a*nd_generator());
+		Matrix<T, 3, 1> random_variable(sigma_l*distribution(generator), sigma_l*distribution(generator), sigma_a*distribution(generator));
 		p_pt_c_->col(i) = pt_c_gt.col(i) + random_variable;
 		all_weights(i, 1) = short(sigma_min / sigma_a * numeric_limits<short>::max());
 	}

@@ -60,7 +60,7 @@ std::vector<POSE_T> o4_roots(const Matrix<POSE_T, Dynamic, Dynamic> & p_)
 
 
 template< typename POSE_T, typename POINT_T > 
-void kneip_main(const Matrix<POINT_T, Dynamic, Dynamic>& X_w, const Matrix<POINT_T, Dynamic, Dynamic>& bv, vector< SE3Group<POSE_T> >* p_solutions_){
+void kneip_main(const Matrix<POINT_T, Dynamic, Dynamic>& X_w, const Matrix<POINT_T, Dynamic, Dynamic>& bv, vector< Sophus::SE3<POSE_T> >* p_solutions_){
 
 	p_solutions_->clear();
 
@@ -224,12 +224,12 @@ void kneip_main(const Matrix<POINT_T, Dynamic, Dynamic>& X_w, const Matrix<POINT
 		//R = N.transpose()*R.transpose()*RR;
 		R = RR.transpose()*R*N;
 
-		p_solutions_->push_back(SE3Group<POSE_T>(SO3Group<POSE_T>(R), SE3Group<POSE_T>::Point(-R*C)));
+		p_solutions_->push_back(Sophus::SE3<POSE_T>(Sophus::SO3<POSE_T>(R), Sophus::SE3<POSE_T>::Point(-R*C)));
 	}
 }
 
 template< typename POSE_T, typename POINT_T > /*Matrix<float,-1,-1,0,-1,-1> = MatrixXf*/
-vector< SE3Group<POSE_T> > kneip(PnPPoseAdapter<POSE_T, POINT_T>& adapter, int i0 = 0, int i1 = 1, int i2 = 2){
+vector< Sophus::SE3<POSE_T> > kneip(PnPPoseAdapter<POSE_T, POINT_T>& adapter, int i0 = 0, int i1 = 1, int i2 = 2){
 	Matrix<POINT_T, Dynamic, Dynamic> bv(3,3);
 	bv.col(0) = adapter.getBearingVector(i0);
 	bv.col(1) = adapter.getBearingVector(i1);
@@ -239,17 +239,17 @@ vector< SE3Group<POSE_T> > kneip(PnPPoseAdapter<POSE_T, POINT_T>& adapter, int i
 	X_w.col(1) = adapter.getPointGlob(i1);
 	X_w.col(2) = adapter.getPointGlob(i2);
 	
-	vector< SE3Group<POSE_T> > solutions;
+	vector< Sophus::SE3<POSE_T> > solutions;
 	kneip_main<POSE_T, POINT_T>(X_w, bv, &solutions);
 	return solutions;
 }
 
 template< typename POSE_T, typename POINT_T > 
 bool kneip(const Matrix<POINT_T, Dynamic, Dynamic>& X_w_, const Matrix<POINT_T, Dynamic, Dynamic>& bv_, 
-	SE3Group<POSE_T>* p_sol_){
+	Sophus::SE3<POSE_T>* p_sol_){
 	typedef Matrix<POINT_T, 3, 1> Point3;
 
-	vector< SE3Group<POSE_T> > v_solutions;
+	vector< Sophus::SE3<POSE_T> > v_solutions;
 	kneip_main<POSE_T, POINT_T>(X_w_, bv_, &v_solutions);
 	
 	POINT_T minScore = numeric_limits<POINT_T>::max();
@@ -315,7 +315,7 @@ void kneip_ransac( PnPPoseAdapter<POSE_T, POINT_T>& adapter,	const POINT_T thre_
 
 	POSE_T cos_thr = cos(atan(thre_2d_ / adapter.getFocal()));
 
-	typedef SE3Group<POSE_T> RT;
+	typedef Sophus::SE3<POSE_T> RT;
 	typedef Matrix<POINT_T, 3, 1> Point3;
 
 	RandomElements<int> re(adapter.getNumberCorrespondences());
@@ -385,7 +385,7 @@ void kneip_ransac( PnPPoseAdapter<POSE_T, POINT_T>& adapter,	const POINT_T thre_
 
 template< typename POSE_T, typename POINT_T > /*Eigen::Matrix<float,-1,-1,0,-1,-1> = Eigen::MatrixXf*/
 void lsq_pnp( PnPPoseAdapter<POSE_T, POINT_T>& adapter,	int& Iter){
-	typedef SE3Group<POSE_T> RT;
+	typedef Sophus::SE3<POSE_T> RT;
 	typedef Matrix<POINT_T, 3, 1> Point3;
 
 	int total = adapter.getNumberCorrespondences();

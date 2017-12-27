@@ -9,7 +9,7 @@ using namespace Eigen;
 using namespace cv;
 
 template< typename POSE_T, typename POINT_T >
-Matrix<POSE_T, 2, 1> calc_percentage_err(const SO3Group<POSE_T>& R_cw_, const Matrix<POSE_T, 3, 1>& t_w_, const PoseAdapterBase<POSE_T, POINT_T>* p_ad){
+Matrix<POSE_T, 2, 1> calc_percentage_err(const Sophus::SO3<POSE_T>& R_cw_, const Matrix<POSE_T, 3, 1>& t_w_, const PoseAdapterBase<POSE_T, POINT_T>* p_ad){
 	Matrix<POSE_T, 3, 1> te = R_cw_*t_w_ - p_ad->getRcw() * p_ad->gettw();
 	POSE_T t_e = te.norm() / p_ad->gettw().norm() * 100;
 
@@ -27,7 +27,7 @@ Matrix<POSE_T, 2, 1> calc_percentage_err(const SO3Group<POSE_T>& R_cw_, const Ma
 }
 
 template< typename POSE_T, typename POINT_T >
-SE3Group<POSE_T> shinji(
+Sophus::SE3<POSE_T> shinji(
 	const Matrix<POINT_T, Dynamic, Dynamic> & X_w_, 
 	const Matrix<POINT_T, Dynamic, Dynamic>&  X_c_, int K){
 	// X_c_ = R_cw * X_w_ + Tw; //R_cw and tw is defined in world and transform a point in world to camera coordinate system
@@ -64,16 +64,16 @@ SE3Group<POSE_T> shinji(
 	Matrix<POSE_T, 3, 3> U = svd.matrixU();
 	Matrix<POSE_T, 3, 3> V = svd.matrixV();
 	Matrix<POSE_T, 3, 1> D = svd.singularValues();
-	SO3Group<POSE_T> R_tmp;
+	Sophus::SO3<POSE_T> R_tmp;
 	if (M.determinant() < 0){
 		Matrix<POSE_T, 3, 3> I = Matrix<POSE_T, 3, 3>::Identity(); I(2, 2) = -1; D(2) *= -1;
-		R_tmp = SO3Group<POSE_T>(U*I*V.transpose());
+		R_tmp = Sophus::SO3<POSE_T>(U*I*V.transpose());
 	}
 	else{
-		R_tmp = SO3Group<POSE_T>(U*V.transpose());
+		R_tmp = Sophus::SO3<POSE_T>(U*V.transpose());
 	}
 	Matrix< POSE_T, 3, 1> T_tmp = Cc - R_tmp * Cw;
-	SE3Group<POSE_T> solution(R_tmp, T_tmp);
+	Sophus::SE3<POSE_T> solution(R_tmp, T_tmp);
 	
 	return solution;
 }
@@ -83,7 +83,7 @@ void shinji_ransac(AOPoseAdapter<POSE_T, POINT_T>& adapter,
 	const POINT_T dist_thre_3d_, int& Iter, POINT_T confidence = 0.99){
 	typedef Matrix<POINT_T, Dynamic, Dynamic> MatrixX;
 	typedef Matrix<POINT_T, 3, 1> Point3;
-	typedef SE3Group<POSE_T> RT;
+	typedef Sophus::SE3<POSE_T> RT;
 
 	RandomElements<int> re((int)adapter.getNumberCorrespondences());
 	const int K = 3;
@@ -142,7 +142,7 @@ template< typename POSE_T, typename POINT_T >
 void shinji_ls(AOPoseAdapter<POSE_T, POINT_T>& adapter){
 	typedef Matrix<POINT_T, Dynamic, Dynamic> MatrixX;
 	typedef Matrix<POINT_T, 3, 1> Point3;
-	typedef SE3Group<POSE_T> RT;
+	typedef Sophus::SE3<POSE_T> RT;
 
 	const vector<short>& vInliers = adapter.getInlierIdx();
 	int K = vInliers.size();
@@ -190,7 +190,7 @@ template< typename POSE_T, typename POINT_T >
 void shinji_kneip_ransac(AOPoseAdapter<POSE_T, POINT_T>& adapter, const POINT_T dist_thre_3d_, const POINT_T thre_2d_, int& Iter, POINT_T confidence = 0.99){
 	typedef Matrix<POINT_T, Dynamic, Dynamic> MatrixX;
 	typedef Matrix<POINT_T, 3, 1> Point3;
-	typedef SE3Group<POSE_T> RT;
+	typedef Sophus::SE3<POSE_T> RT;
 
 	const POSE_T cos_thr = cos(atan(thre_2d_ / adapter.getFocal()));
 

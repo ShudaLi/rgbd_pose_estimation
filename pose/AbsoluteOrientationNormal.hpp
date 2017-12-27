@@ -77,12 +77,12 @@ bool assign_sample(const NormalAOPoseAdapter<POSE_T, POINT_T>& adapter,
 template<typename POSE_T, typename POINT_T>
 void nl_2p( const Matrix<POINT_T,3,1>& pt1_c, const Matrix<POINT_T,3,1>& nl1_c, const Matrix<POINT_T,3,1>& pt2_c, 
 			const Matrix<POINT_T,3,1>& pt1_w, const Matrix<POINT_T,3,1>& nl1_w, const Matrix<POINT_T,3,1>& pt2_w, 
-			SE3Group<POSE_T>* p_solution){
+			Sophus::SE3<POSE_T>* p_solution){
 	//Drost, B., Ulrich, M., Navab, N., & Ilic, S. (2010). Model globally, match locally: Efficient and robust 3D object recognition. In CVPR (pp. 998?005). Ieee. http://doi.org/10.1109/CVPR.2010.5540108
 	typedef Matrix<POINT_T, Dynamic, Dynamic> MatrixX;
 	typedef Matrix<POSE_T, 3, 1> V3;
-	typedef SO3Group<POSE_T> ROTATION;
-	typedef SE3Group<POSE_T> RT;
+	typedef Sophus::SO3<POSE_T> ROTATION;
+	typedef Sophus::SE3<POSE_T> RT;
 
 	V3 c_w = pt1_w.template cast<POSE_T>(); // c_w is the origin of coordinate g w.r.t. world
 
@@ -143,9 +143,9 @@ void nl_2p( const Matrix<POINT_T,3,1>& pt1_c, const Matrix<POINT_T,3,1>& nl1_c, 
 
 
 template< typename POSE_T, typename POINT_T > /*Matrix<float,-1,-1,0,-1,-1> = MatrixXf*/
-SE3Group<POSE_T>  nl_shinji_ls(const Matrix<POINT_T, Dynamic, Dynamic> & Xw_, const Matrix<POINT_T, Dynamic, Dynamic>&  Xc_,
+Sophus::SE3<POSE_T>  nl_shinji_ls(const Matrix<POINT_T, Dynamic, Dynamic> & Xw_, const Matrix<POINT_T, Dynamic, Dynamic>&  Xc_,
 	const Matrix<POINT_T, Dynamic, Dynamic> & Nw_, const Matrix<POINT_T, Dynamic, Dynamic>&  Nc_, const int K) {
-	typedef SE3Group<POSE_T> RT;
+	typedef Sophus::SE3<POSE_T> RT;
 
 	assert(Xw_.rows() == 3);
 
@@ -191,13 +191,13 @@ SE3Group<POSE_T>  nl_shinji_ls(const Matrix<POINT_T, Dynamic, Dynamic> & Xw_, co
 	Matrix<POSE_T, 3, 3> U = svd.matrixU();
 	Matrix<POSE_T, 3, 3> V = svd.matrixV();
 	Matrix<POSE_T, 3, 1> D = svd.singularValues();
-	SO3Group<POSE_T> R_tmp;
+	Sophus::SO3<POSE_T> R_tmp;
 	if (M.determinant() < 0){
 		Matrix<POSE_T, 3, 3> I = Matrix<POSE_T, 3, 3>::Identity(); I(2, 2) = -1; D(2) *= -1;
-		R_tmp = SO3Group<POSE_T>(U*I*V.transpose());
+		R_tmp = Sophus::SO3<POSE_T>(U*I*V.transpose());
 	}
 	else{
-		R_tmp = SO3Group<POSE_T>(U*V.transpose());
+		R_tmp = Sophus::SO3<POSE_T>(U*V.transpose());
 	}
 	//T=ccent'-R*wcent';
 	Matrix< POSE_T, 3, 1> T_tmp = Cc - R_tmp * Cw;
@@ -215,7 +215,7 @@ void nl_kneip_ransac(NormalAOPoseAdapter<POSE_T, POINT_T>& adapter, const POINT_
 	int& Iter, POINT_T confidence = 0.99){
 	typedef Matrix<POINT_T, Dynamic, Dynamic> MatrixX;
 	typedef Matrix<POINT_T, 3, 1> Point3;
-	typedef SE3Group<POSE_T> RT;
+	typedef Sophus::SE3<POSE_T> RT;
 
 	POSE_T cos_thr = cos(atan(thre_2d_ / adapter.getFocal()));
 	POINT_T cos_nl_thre = cos(nl_thre);
@@ -287,7 +287,7 @@ void nl_shinji_ransac(NormalAOPoseAdapter<POSE_T, POINT_T>& adapter, const POINT
 	// eimXc_ = R * eimXw_ + T; //R and t is defined in world and transform a point in world to local
 	typedef Matrix<POINT_T, Dynamic, Dynamic> MatrixX;
 	typedef Matrix<POINT_T, 3, 1> Point3;
-	typedef SE3Group<POSE_T> RT;
+	typedef Sophus::SE3<POSE_T> RT;
 
 	POINT_T cos_nl_thre = cos(nl_thre);
 
@@ -356,7 +356,7 @@ void nl_shinji_kneip_ransac(NormalAOPoseAdapter<POSE_T, POINT_T>& adapter,
 	const POINT_T thre_3d_, const POINT_T thre_2d_, const POINT_T nl_thre, int& Iter, POINT_T confidence = 0.99){
 	typedef Matrix<POINT_T, Dynamic, Dynamic> MX;
 	typedef Matrix<POINT_T, 3, 1> P3;
-	typedef SE3Group<POSE_T> RT;
+	typedef Sophus::SE3<POSE_T> RT;
 
 	POSE_T cos_thr = cos(atan(thre_2d_ / adapter.getFocal()));
 	POINT_T cos_nl_thre = cos(nl_thre);
@@ -475,7 +475,7 @@ void nl_shinji_kneip_ls(NormalAOPoseAdapter<POSE_T, POINT_T>& adapter)
 	int K = 0; POSE_T TW = 0;
 
 	V3 c_opt = adapter.getRcw().inverse() * (-adapter.gettw()); //camera centre in WRS
-	SO3Group<POSE_T> R_opt;
+	Sophus::SO3<POSE_T> R_opt;
 	for (int ii = 0; ii < 3; ii++)
 	{
 		POSE_T sigma_w_sqr = 0.;
@@ -515,10 +515,10 @@ void nl_shinji_kneip_ls(NormalAOPoseAdapter<POSE_T, POINT_T>& adapter)
 		V3 D = svd.singularValues();
 		if (M33.determinant() < 0){
 			M3 I = M3::Identity(); I(2, 2) = -1; //D(2) *= -1;
-			R_opt = SO3Group<POSE_T>(U*I*V.transpose());
+			R_opt = Sophus::SO3<POSE_T>(U*I*V.transpose());
 		}
 		else{
-			R_opt = SO3Group<POSE_T>(U*V.transpose());
+			R_opt = Sophus::SO3<POSE_T>(U*V.transpose());
 		}
 		//T=ccent'-R*wcent';
 		V3 c = Cw - R_opt.inverse() * Cc;

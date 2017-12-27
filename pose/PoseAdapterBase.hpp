@@ -14,7 +14,6 @@
 #include <se3.hpp>
 
 using namespace Eigen;
-using namespace Sophus;
 /**
  * \brief The namespace for the absolute pose methods.
  */
@@ -32,7 +31,7 @@ class PoseAdapterBase
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	typedef Matrix<POSE_T, 3, 1> Vector3;
-	typedef SO3Group<POSE_T> SO3_T;
+	typedef Sophus::SO3<POSE_T> SO3_T;
 
 	typedef Matrix<POINT_T, 3, 1> Point3;
 
