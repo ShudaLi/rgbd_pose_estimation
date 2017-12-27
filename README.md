@@ -17,9 +17,7 @@ Windows:
 	Requirements:
 		1) Microsoft Visual C++
 		   From: https://support.microsoft.com/en-us/kb/2977003/
-		2) Boost
-		   From: http://www.boost.org/
-		3) Eigen
+		2) Eigen
 		   From: http://eigen.tuxfamily.org/index.php?title=Main_Page
 		   
 	Optional requirements for the sample codes:
@@ -41,9 +39,7 @@ Windows:
 Linux:
 
 	Requirements:
-		1) Boost
-		   From: http://www.boost.org/
-		2) Eigen
+		1) Eigen
 		   From: http://eigen.tuxfamily.org/index.php?title=Main_Page
 		   
 	Optional requirements for the sample codes:
