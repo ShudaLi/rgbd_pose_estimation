@@ -1,6 +1,9 @@
-rgbd_pose_estimation (Version 1.1 - 11th of Jan 2016)
+rgbd_pose_estimation (Version 1.2 - 28th of Dec 2017)
 ---------------------------------------
-Coming soon...
+Update notes:
+* Adapt to the latest Sophus library.
+* Remove dependency on boost library.
+# Fix a few bugs in the testing example.
 
 
 Release highlights:
