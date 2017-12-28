@@ -5,6 +5,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
+#include <random>
+#include <type_traits>
 
 #include <Eigen/Core>
 
@@ -104,12 +106,11 @@ void ensureFailed(char const* function, char const* file, int line,
                   char const* description);
 }
 
-#define SOPHUS_ENSURE(expr, description, ...)                               \
-  ((expr) ? ((void)0)                                                       \
-          : ::Sophus::ensureFailed(                                         \
-                SOPHUS_FUNCTION, __FILE__, __LINE__,                        \
-                Sophus::details::FormatString((description), ##__VA_ARGS__) \
-                    .c_str()))
+#define SOPHUS_ENSURE(expr, ...)                     \
+  ((expr) ? ((void)0)                                \
+          : ::Sophus::ensureFailed(                  \
+                SOPHUS_FUNCTION, __FILE__, __LINE__, \
+                Sophus::details::FormatString(##__VA_ARGS__).c_str()))
 #else
 namespace Sophus {
 template <class... Args>
@@ -126,10 +127,9 @@ SOPHUS_FUNC void defaultEnsure(char const* function, char const* file, int line,
 #endif
 }
 }  // namespace Sophus
-#define SOPHUS_ENSURE(expr, description, ...)                          \
-  ((expr) ? ((void)0)                                                  \
-          : Sophus::defaultEnsure(SOPHUS_FUNCTION, __FILE__, __LINE__, \
-                                  (description), ##__VA_ARGS__))
+#define SOPHUS_ENSURE(expr, ...)                                         \
+  ((expr) ? ((void)0) : Sophus::defaultEnsure(SOPHUS_FUNCTION, __FILE__, \
+                                              __LINE__, ##__VA_ARGS__))
 #endif
 
 namespace Sophus {
@@ -199,6 +199,13 @@ class optional {
 
 template <bool B, class T = void>
 using enable_if_t = typename std::enable_if<B, T>::type;
+
+template <class G>
+struct IsUniformRandomBitGenerator {
+  static const bool value = std::is_unsigned<typename G::result_type>::value &&
+                            std::is_unsigned<decltype(G::min())>::value &&
+                            std::is_unsigned<decltype(G::max())>::value;
+};
 }  // namespace Sophus
 
 #endif  // SOPHUS_COMMON_HPP

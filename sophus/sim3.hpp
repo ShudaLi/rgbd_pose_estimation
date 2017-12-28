@@ -2,6 +2,7 @@
 #define SOPHUS_SIM3_HPP
 
 #include "rxso3.hpp"
+#include "sim_details.hpp"
 
 namespace Sophus {
 template <class Scalar_, int Options = 0>
@@ -16,8 +17,8 @@ namespace internal {
 template <class Scalar_, int Options>
 struct traits<Sophus::Sim3<Scalar_, Options>> {
   using Scalar = Scalar_;
-  using TranslationType = Sophus::Vector3<Scalar>;
-  using RxSO3Type = Sophus::RxSO3<Scalar>;
+  using TranslationType = Sophus::Vector3<Scalar, Options>;
+  using RxSO3Type = Sophus::RxSO3<Scalar, Options>;
 };
 
 template <class Scalar_, int Options>
@@ -71,6 +72,7 @@ class Sim3Base {
   static int constexpr N = 4;
   using Transformation = Matrix<Scalar, N, N>;
   using Point = Vector3<Scalar>;
+  using Line = ParametrizedLine3<Scalar>;
   using Tangent = Vector<Scalar, DoF>;
   using Adjoint = Matrix<Scalar, DoF, DoF>;
 
@@ -84,10 +86,12 @@ class Sim3Base {
     Matrix3<Scalar> const R = rxso3().rotationMatrix();
     Adjoint res;
     res.setZero();
-    res.block(0, 0, 3, 3) = scale() * R;
-    res.block(0, 3, 3, 3) = SO3<Scalar>::hat(translation()) * R;
-    res.block(0, 6, 3, 1) = -translation();
-    res.block(3, 3, 3, 3) = R;
+    res.template block<3, 3>(0, 0) = rxso3().matrix();
+    res.template block<3, 3>(0, 3) = SO3<Scalar>::hat(translation()) * R;
+    res.template block<3, 1>(0, 6) = -translation();
+
+    res.template block<3, 3>(3, 3) = R;
+
     res(6, 6) = 1;
     return res;
   }
@@ -171,6 +175,19 @@ class Sim3Base {
   //
   SOPHUS_FUNC Point operator*(Point const& p) const {
     return rxso3() * p + translation();
+  }
+
+  // Group action on lines.
+  //
+  // This function rotates, scales and translates a parametrized line
+  // ``l(t) = o + t * d`` by the Sim(3) element:
+  //
+  // Origin ``o`` is rotated, scaled and translated
+  // Direction ``d`` is rotated
+  //
+  SOPHUS_FUNC Line operator*(Line const& l) const {
+    Line rotatedLine = rxso3() * l;
+    return Line(rotatedLine.origin() + translation(), rotatedLine.direction());
   }
 
   // In-place group multiplication.
@@ -303,41 +320,7 @@ class Sim3Base {
         RxSO3<Scalar>::expAndTheta(a.template tail<4>(), &theta);
     Matrix3<Scalar> const Omega = SO3<Scalar>::hat(omega);
 
-    using std::abs;
-    using std::sin;
-    using std::cos;
-    static Matrix3<Scalar> const I = Matrix3<Scalar>::Identity();
-    static Scalar const one(1);
-    static Scalar const half(0.5);
-    Matrix3<Scalar> const Omega2 = Omega * Omega;
-    Scalar const scale = rxso3.scale();
-    Scalar A, B, C;
-    if (abs(sigma) < Constants<Scalar>::epsilon()) {
-      C = one;
-      if (abs(theta) < Constants<Scalar>::epsilon()) {
-        A = half;
-        B = Scalar(1. / 6.);
-      } else {
-        Scalar theta_sq = theta * theta;
-        A = (one - cos(theta)) / theta_sq;
-        B = (theta - sin(theta)) / (theta_sq * theta);
-      }
-    } else {
-      C = (scale - one) / sigma;
-      if (abs(theta) < Constants<Scalar>::epsilon()) {
-        Scalar sigma_sq = sigma * sigma;
-        A = ((sigma - one) * scale + one) / sigma_sq;
-        B = ((half * sigma * sigma - sigma + one) * scale) / (sigma_sq * sigma);
-      } else {
-        Scalar theta_sq = theta * theta;
-        Scalar a = scale * sin(theta);
-        Scalar b = scale * cos(theta);
-        Scalar c = theta_sq + sigma * sigma;
-        A = (a * sigma + (one - b) * theta) / (theta * c);
-        B = (C - ((b - one) * sigma + a * theta) / (c)) * one / (theta_sq);
-      }
-    }
-    Matrix3<Scalar> const W = A * Omega + B * Omega2 + C * I;
+    Matrix3<Scalar> const W = details::calcW<Scalar, 3>(Omega, theta, sigma);
     return Sim3<Scalar>(rxso3, W * upsilon);
   }
 
@@ -459,54 +442,10 @@ class Sim3Base {
     Vector4<Scalar> const omega_sigma =
         RxSO3<Scalar>::logAndTheta(other.rxso3(), &theta);
     Vector3<Scalar> const omega = omega_sigma.template head<3>();
-
     Scalar sigma = omega_sigma[3];
-
-    using std::abs;
-    using std::sin;
-    using std::abs;
-    static Matrix3<Scalar> const I = Matrix3<Scalar>::Identity();
-    static Scalar const half(0.5);
-    static Scalar const one(1);
-    static Scalar const two(2);
     Matrix3<Scalar> const Omega = SO3<Scalar>::hat(omega);
-    Matrix3<Scalar> const Omega2 = Omega * Omega;
-    Scalar const scale = other.scale();
-    Scalar const scale_sq = scale * scale;
-    Scalar const theta_sq = theta * theta;
-    Scalar const sin_theta = sin(theta);
-    Scalar const cos_theta = cos(theta);
-
-    Scalar a, b, c;
-    if (abs(sigma * sigma) < Constants<Scalar>::epsilon()) {
-      c = one - half * sigma;
-      a = -half;
-      if (abs(theta_sq) < Constants<Scalar>::epsilon()) {
-        b = Scalar(1. / 12.);
-      } else {
-        b = (theta * sin_theta + two * cos_theta - two) /
-            (two * theta_sq * (cos_theta - one));
-      }
-    } else {
-      Scalar const scale_cu = scale_sq * scale;
-      c = sigma / (scale - one);
-      if (abs(theta_sq) < Constants<Scalar>::epsilon()) {
-        a = (-sigma * scale + scale - one) / ((scale - one) * (scale - one));
-        b = (scale_sq * sigma - two * scale_sq + scale * sigma + two * scale) /
-            (two * scale_cu - Scalar(6) * scale_sq + Scalar(6) * scale - two);
-      } else {
-        Scalar const s_sin_theta = scale * sin_theta;
-        Scalar const s_cos_theta = scale * cos_theta;
-        a = (theta * s_cos_theta - theta - sigma * s_sin_theta) /
-            (theta * (scale_sq - two * s_cos_theta + one));
-        b = -scale *
-            (theta * s_sin_theta - theta * sin_theta + sigma * s_cos_theta -
-             scale * sigma + sigma * cos_theta - sigma) /
-            (theta_sq * (scale_cu - two * scale * s_cos_theta - scale_sq +
-                         two * s_cos_theta + scale - one));
-      }
-    }
-    Matrix3<Scalar> const W_inv = a * Omega + b * Omega2 + c * I;
+    Matrix3<Scalar> const W_inv =
+        details::calcWInv<Scalar, 3>(Omega, theta, sigma, other.scale());
 
     res.segment(0, 3) = W_inv * other.translation();
     res.segment(3, 3) = omega;
@@ -529,9 +468,6 @@ class Sim3Base {
   //                |  0  0  0  0 | .
   //
   SOPHUS_FUNC static Tangent vee(Transformation const& Omega) {
-    SOPHUS_ENSURE(
-        Omega.row(3).template lpNorm<1>() < Constants<Scalar>::epsilon(),
-        "Omega: \n%", Omega);
     Tangent upsilon_omega_sigma;
     upsilon_omega_sigma.template head<3>() = Omega.col(3).template head<3>();
     upsilon_omega_sigma.template tail<4>() =
@@ -551,6 +487,8 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
   using Point = typename Base::Point;
   using Tangent = typename Base::Tangent;
   using Adjoint = typename Base::Adjoint;
+  using RxSo3Member = RxSO3<Scalar, Options>;
+  using TranslationMember = Vector3<Scalar, Options>;
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -562,22 +500,36 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
   //
   template <class OtherDerived>
   SOPHUS_FUNC Sim3(Sim3Base<OtherDerived> const& other)
-      : rxso3_(other.rxso3()), translation_(other.translation()) {}
+      : rxso3_(other.rxso3()), translation_(other.translation()) {
+    static_assert(std::is_same<typename OtherDerived::Scalar, Scalar>::value,
+                  "must be same Scalar type");
+  }
 
   // Constructor from RxSO3 and translation vector
   //
-  template <class OtherDerived>
+  template <class OtherDerived, class D>
   SOPHUS_FUNC Sim3(RxSO3Base<OtherDerived> const& rxso3,
-                   Point const& translation)
-      : rxso3_(rxso3), translation_(translation) {}
+                   Eigen::MatrixBase<D> const& translation)
+      : rxso3_(rxso3), translation_(translation) {
+    static_assert(std::is_same<typename OtherDerived::Scalar, Scalar>::value,
+                  "must be same Scalar type");
+    static_assert(std::is_same<typename D::Scalar, Scalar>::value,
+                  "must be same Scalar type");
+  }
 
   // Constructor from quaternion and translation vector.
   //
   // Precondition: quaternion must not be close to zero.
   //
-  SOPHUS_FUNC Sim3(Eigen::Quaternion<Scalar> const& quaternion,
-                   Point const& translation)
-      : rxso3_(quaternion), translation_(translation) {}
+  template <class D1, class D2>
+  SOPHUS_FUNC Sim3(Eigen::QuaternionBase<D1> const& quaternion,
+                   Eigen::MatrixBase<D2> const& translation)
+      : rxso3_(quaternion), translation_(translation) {
+    static_assert(std::is_same<typename D1::Scalar, Scalar>::value,
+                  "must be same Scalar type");
+    static_assert(std::is_same<typename D2::Scalar, Scalar>::value,
+                  "must be same Scalar type");
+  }
 
   // Constructor from 4x4 matrix
   //
@@ -605,27 +557,41 @@ class Sim3 : public Sim3Base<Sim3<Scalar_, Options>> {
     return rxso3_.data();
   }
 
+  // Draw uniform sample from Sim(3) manifold.
+  //
+  // Translations are drawn component-wise from the range [-1, 1].
+  // The scale factor is drawn uniformly in log2-space from [-1, 1],
+  // hence the scale is in [0.5, 2].
+  //
+  template <class UniformRandomBitGenerator>
+  static Sim3 sampleUniform(UniformRandomBitGenerator& generator) {
+    std::uniform_real_distribution<Scalar> uniform(Scalar(-1), Scalar(1));
+    return Sim3(RxSO3<Scalar>::sampleUniform(generator),
+                Vector3<Scalar>(uniform(generator), uniform(generator),
+                                uniform(generator)));
+  }
+
   // Accessor of RxSO3
   //
-  SOPHUS_FUNC RxSO3<Scalar>& rxso3() { return rxso3_; }
+  SOPHUS_FUNC RxSo3Member& rxso3() { return rxso3_; }
 
   // Mutator of RxSO3
   //
-  SOPHUS_FUNC RxSO3<Scalar> const& rxso3() const { return rxso3_; }
+  SOPHUS_FUNC RxSo3Member const& rxso3() const { return rxso3_; }
 
   // Mutator of translation vector
   //
-  SOPHUS_FUNC Vector3<Scalar>& translation() { return translation_; }
+  SOPHUS_FUNC TranslationMember& translation() { return translation_; }
 
   // Accessor of translation vector
   //
-  SOPHUS_FUNC Vector3<Scalar> const& translation() const {
+  SOPHUS_FUNC TranslationMember const& translation() const {
     return translation_;
   }
 
  protected:
-  RxSO3<Scalar> rxso3_;
-  Vector3<Scalar> translation_;
+  RxSo3Member rxso3_;
+  TranslationMember translation_;
 };
 
 }  // namespace Sophus

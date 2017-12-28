@@ -5,16 +5,16 @@
 
 namespace Sophus {
 
-template <class Scalar, int M>
-using Vector = Eigen::Matrix<Scalar, M, 1>;
+template <class Scalar, int M, int Options = 0>
+using Vector = Eigen::Matrix<Scalar, M, 1, Options>;
 
-template <class Scalar>
-using Vector2 = Vector<Scalar, 2>;
+template <class Scalar, int Options = 0>
+using Vector2 = Vector<Scalar, 2, Options>;
 using Vector2f = Vector2<float>;
 using Vector2d = Vector2<double>;
 
-template <class Scalar>
-using Vector3 = Vector<Scalar, 3>;
+template <class Scalar, int Options = 0>
+using Vector3 = Vector<Scalar, 3, Options>;
 using Vector3f = Vector3<float>;
 using Vector3d = Vector3<double>;
 
@@ -60,6 +60,19 @@ template <class Scalar>
 using Matrix7 = Matrix<Scalar, 7, 7>;
 using Matrix7f = Matrix7<float>;
 using Matrix7d = Matrix7<double>;
+
+template <class Scalar, int N, int Options = 0>
+using ParametrizedLine = Eigen::ParametrizedLine<Scalar, N, Options>;
+
+template <class Scalar, int Options = 0>
+using ParametrizedLine3 = ParametrizedLine<Scalar, 3, Options>;
+using ParametrizedLine3f = ParametrizedLine3<float>;
+using ParametrizedLine3d = ParametrizedLine3<double>;
+
+template <class Scalar, int Options = 0>
+using ParametrizedLine2 = ParametrizedLine<Scalar, 2, Options>;
+using ParametrizedLine2f = ParametrizedLine2<float>;
+using ParametrizedLine2d = ParametrizedLine2<double>;
 
 namespace details {
 template <class Scalar>
@@ -149,6 +162,38 @@ template <typename T>
 auto transpose(T const& p) -> decltype(details::Transpose<T>::impl(T())) {
   return details::Transpose<T>::impl(p);
 }
+
+template <class Scalar>
+struct IsFloatingPoint {
+  static bool const value = std::is_floating_point<Scalar>::value;
+};
+
+template <class Scalar, int M, int N>
+struct IsFloatingPoint<Matrix<Scalar, M, N>> {
+  static bool const value = std::is_floating_point<Scalar>::value;
+};
+
+template <class Scalar_>
+struct GetScalar {
+  using Scalar = Scalar_;
+};
+
+template <class Scalar_, int M, int N>
+struct GetScalar<Matrix<Scalar_, M, N>> {
+  using Scalar = Scalar_;
+};
+
+// Planes in 3d are hyperplanes.
+template <class T>
+using Plane3 = Eigen::Hyperplane<T, 3>;
+using Plane3d = Plane3<double>;
+using Plane3f = Plane3<float>;
+
+// Lines in 2d are hyperplanes.
+template <class T>
+using Line2 = Eigen::Hyperplane<T, 2>;
+using Line2d = Line2<double>;
+using Line2f = Line2<float>;
 
 }  // namespace Sophus
 

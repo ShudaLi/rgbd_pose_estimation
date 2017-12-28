@@ -16,8 +16,8 @@ namespace internal {
 template <class Scalar_, int Options>
 struct traits<Sophus::SE2<Scalar_, Options>> {
   using Scalar = Scalar_;
-  using TranslationType = Sophus::Vector2<Scalar>;
-  using SO2Type = Sophus::SO2<Scalar>;
+  using TranslationType = Sophus::Vector2<Scalar, Options>;
+  using SO2Type = Sophus::SO2<Scalar, Options>;
 };
 
 template <class Scalar_, int Options>
@@ -68,6 +68,7 @@ class SE2Base {
   static int constexpr N = 3;
   using Transformation = Matrix<Scalar, N, N>;
   using Point = Vector2<Scalar>;
+  using Line = ParametrizedLine2<Scalar>;
   using Tangent = Vector<Scalar, DoF>;
   using Adjoint = Matrix<Scalar, DoF, DoF>;
 
@@ -171,6 +172,18 @@ class SE2Base {
     return so2() * p + translation();
   }
 
+  // Group action on lines.
+  //
+  // This function rotates and translates a parametrized line
+  // ``l(t) = o + t * d`` by the SE(2) element:
+  //
+  // Origin ``o`` is rotated and translated using SE(2) action
+  // Direction ``d`` is rotated using SO(2) action
+  //
+  SOPHUS_FUNC Line operator*(Line const& l) const {
+    return Line((*this) * l.origin(), so2() * l.direction());
+  }
+
   // In-place group multiplication.
   //
   SOPHUS_FUNC SE2Base<Derived>& operator*=(SE2<Scalar> const& other) {
@@ -198,6 +211,9 @@ class SE2Base {
   // Precondition: ``R`` must be orthogonal and ``det(R)=1``.
   //
   SOPHUS_FUNC void setRotationMatrix(Matrix<Scalar, 2, 2> const& R) {
+    SOPHUS_ENSURE(isOrthogonal(R), "R is not orthogonal:\n %", R);
+    SOPHUS_ENSURE(R.determinant() > 0, "det(R) is not positive: %",
+                  R.determinant());
     so2().setComplex(Scalar(0.5) * (R(0, 0) + R(1, 1)),
                      Scalar(0.5) * (R(1, 0) - R(0, 1)));
   }
@@ -231,7 +247,7 @@ class SE2Base {
   // Accessor of unit complex number.
   //
   SOPHUS_FUNC
-  typename Eigen::internal::traits<Derived>::SO2Type::Complex const&
+  typename Eigen::internal::traits<Derived>::SO2Type::ComplexT const&
   unit_complex() const {
     return so2().unit_complex();
   }
@@ -423,6 +439,8 @@ class SE2 : public SE2Base<SE2<Scalar_, Options>> {
   using Point = typename Base::Point;
   using Tangent = typename Base::Tangent;
   using Adjoint = typename Base::Adjoint;
+  using SO2Member = SO2<Scalar, Options>;
+  using TranslationMember = Vector2<Scalar, Options>;
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -434,13 +452,22 @@ class SE2 : public SE2Base<SE2<Scalar_, Options>> {
   //
   template <class OtherDerived>
   SOPHUS_FUNC SE2(SE2Base<OtherDerived> const& other)
-      : so2_(other.so2()), translation_(other.translation()) {}
+      : so2_(other.so2()), translation_(other.translation()) {
+    static_assert(std::is_same<typename OtherDerived::Scalar, Scalar>::value,
+                  "must be same Scalar type");
+  }
 
   // Constructor from SO3 and translation vector
   //
-  template <class OtherDerived>
-  SOPHUS_FUNC SE2(SO2Base<OtherDerived> const& so2, Point const& translation)
-      : so2_(so2), translation_(translation) {}
+  template <class OtherDerived, class D>
+  SOPHUS_FUNC SE2(SO2Base<OtherDerived> const& so2,
+                  Eigen::MatrixBase<D> const& translation)
+      : so2_(so2), translation_(translation) {
+    static_assert(std::is_same<typename OtherDerived::Scalar, Scalar>::value,
+                  "must be same Scalar type");
+    static_assert(std::is_same<typename D::Scalar, Scalar>::value,
+                  "must be same Scalar type");
+  }
 
   // Constructor from rotation matrix and translation vector
   //
@@ -471,6 +498,38 @@ class SE2 : public SE2Base<SE2<Scalar_, Options>> {
       : so2_(T.template topLeftCorner<2, 2>().eval()),
         translation_(T.template block<2, 1>(0, 2)) {}
 
+  // Returns closest SE3 given arbirary 4x4 matrix.
+  //
+  SOPHUS_FUNC static SE2 fitToSE2(Matrix3<Scalar> const& T) {
+    return SE2(SO2<Scalar>::fitToSO2(T.template block<2, 2>(0, 0)),
+               T.template block<2, 1>(0, 2));
+  }
+
+  // Construct a translation only SE3 instance.
+  //
+  template <class T0, class T1>
+  static SOPHUS_FUNC SE2 trans(T0 const& x, T1 const& y) {
+    return SE2(SO2<Scalar>(), Vector2<Scalar>(x, y));
+  }
+
+  // Contruct x-axis translation.
+  //
+  static SOPHUS_FUNC SE2 transX(Scalar const& x) {
+    return SE2::trans(x, Scalar(0));
+  }
+
+  // Contruct y-axis translation.
+  //
+  static SOPHUS_FUNC SE2 transY(Scalar const& y) {
+    return SE2::trans(Scalar(0), y);
+  }
+
+  // Contruct pure rotation.
+  //
+  static SOPHUS_FUNC SE2 rot(Scalar const& x) {
+    return SE2(SO2<Scalar>(x), Sophus::Vector2<Scalar>::Zero());
+  }
+
   // This provides unsafe read/write access to internal data. SO(2) is
   // represented by a complex number (two parameters). When using direct write
   // access, the user needs to take care of that the complex number stays
@@ -488,27 +547,38 @@ class SE2 : public SE2Base<SE2<Scalar_, Options>> {
     return so2_.data();
   }
 
+  // Draw uniform sample from SE(3) manifold.
+  //
+  // Translations are drawn component-wise from the range [-1, 1].
+  //
+  template <class UniformRandomBitGenerator>
+  static SE2 sampleUniform(UniformRandomBitGenerator& generator) {
+    std::uniform_real_distribution<Scalar> uniform(Scalar(-1), Scalar(1));
+    return SE2(SO2<Scalar>::sampleUniform(generator),
+               Vector2<Scalar>(uniform(generator), uniform(generator)));
+  }
+
   // Accessor of SO3
   //
-  SOPHUS_FUNC SO2<Scalar>& so2() { return so2_; }
+  SOPHUS_FUNC SO2Member& so2() { return so2_; }
 
   // Mutator of SO3
   //
-  SOPHUS_FUNC SO2<Scalar> const& so2() const { return so2_; }
+  SOPHUS_FUNC SO2Member const& so2() const { return so2_; }
 
   // Mutator of translation vector
   //
-  SOPHUS_FUNC Vector2<Scalar>& translation() { return translation_; }
+  SOPHUS_FUNC TranslationMember& translation() { return translation_; }
 
   // Accessor of translation vector
   //
-  SOPHUS_FUNC Vector2<Scalar> const& translation() const {
+  SOPHUS_FUNC TranslationMember const& translation() const {
     return translation_;
   }
 
  protected:
-  Sophus::SO2<Scalar> so2_;
-  Vector2<Scalar> translation_;
+  SO2Member so2_;
+  TranslationMember translation_;
 };
 
 }  // end namespace
