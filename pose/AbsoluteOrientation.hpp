@@ -129,7 +129,7 @@ void shinji_ransac(AOPoseAdapter<Tp>& adapter,
 			adapter.setRcw(solution.so3());
 			adapter.sett(solution.translation());
 			adapter.setInlier(inliers);
-			//Iter = RANSACUpdateNumIters(confidence, (T)(adapter.getNumberCorrespondences() - votes) / adapter.getNumberCorrespondences(), K, Iter);
+			Iter = RANSACUpdateNumIters(confidence, (Tp)(adapter.getNumberCorrespondences() - votes) / adapter.getNumberCorrespondences(), K, Iter);
 		}
 	}
 	adapter.cvtInlier();
@@ -248,7 +248,7 @@ void shinji_kneip_ransac(AOPoseAdapter<Tp>& adapter, const Tp dist_thre_3d_, con
 				adapter.setRcw(itr->so3());
 				adapter.sett(itr->translation());
 				adapter.setInlier(inliers);
-				//Iter = RANSACUpdateNumIters(confidence, (POINT_T)(adapter.getNumberCorrespondences() * 2 - votes) / adapter.getNumberCorrespondences() / 2, K, Iter);
+				Iter = RANSACUpdateNumIters(confidence, (Tp)(adapter.getNumberCorrespondences() * 2 - votes) / adapter.getNumberCorrespondences() / 2, K, Iter);
 			}
 		}
 	}

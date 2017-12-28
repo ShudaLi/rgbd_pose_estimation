@@ -81,6 +81,7 @@ void test_all(){
 	double min_depth = 0.4;
 	double max_depth = 8.; //for Gaussian or uniform noise
 	double f = 585.;
+	double confidence = 0.99999;
 
 
 #ifdef __gnu_linux__
@@ -160,7 +161,7 @@ void test_all(){
 							&Q, &M, &P, &N, &U, &all_weights);
 					}
 					NormalAOPoseAdapter<double> adapter(U, P, N, Q, M);
-
+					adapter.setFocal(f, f);
 					//convert to opencv data structure
 					updated_iter = iteration;
 					Mat m2D, m3D, cameraMatrix, inliers, rvec, tvec;
@@ -169,8 +170,8 @@ void test_all(){
 					cameraMatrix.at<double>(1, 1) = f;
 					cameraMatrix.at<double>(2, 2) = 1.;
 					cvtCV(Q, U, f, &m3D, &m2D);
-					cv::solvePnPRansac(m3D, m2D, cameraMatrix, Mat(), rvec, tvec, false, updated_iter, 8.f, 0.99f, inliers, cv::SOLVEPNP_EPNP);
-					cv::solvePnPRansac(m3D, m2D, cameraMatrix, Mat(), rvec, tvec, true, updated_iter, 8.f, 0.99f, inliers, cv::SOLVEPNP_ITERATIVE);
+					cv::solvePnPRansac(m3D, m2D, cameraMatrix, Mat(), rvec, tvec, false, updated_iter, 8.f, confidence, inliers, cv::SOLVEPNP_EPNP);
+					cv::solvePnPRansac(m3D, m2D, cameraMatrix, Mat(), rvec, tvec, true, updated_iter, 8.f, confidence, inliers, cv::SOLVEPNP_ITERATIVE);
 					//convert to rotation matrix
 					Mat cvmRw;	Rodrigues(rvec, cvmRw);
 					Matrix3d RR;
@@ -182,32 +183,32 @@ void test_all(){
 
 					//estimate camera pose using kneip_ransac
 					updated_iter = iteration;
-					kneip_ransac<double>(adapter, thre_2d, updated_iter, 0.99);
+					kneip_ransac<double>(adapter, thre_2d, updated_iter, confidence);
 					e_k.col(jj) = calc_percentage_err<double>(R, t, &adapter);
 
 					//estimate camera pose using shinji_ransac
 					updated_iter = iteration;
-					shinji_ransac<double>(adapter, thre_3d, updated_iter, 0.99);
+					shinji_ransac<double>(adapter, thre_3d, updated_iter, confidence);
 					e_s.col(jj) = calc_percentage_err<double>(R, t, &adapter);
 
 					//estimate camera pose using shinji_kneip_ransac
 					updated_iter = iteration;
-					shinji_kneip_ransac<double>(adapter, thre_3d, thre_2d, updated_iter, 0.99);
+					shinji_kneip_ransac<double>(adapter, thre_3d, thre_2d, updated_iter, confidence);
 					adapter.getInlierIdx();
 					e_sk.col(jj) = calc_percentage_err<double>(R, t, &adapter);
 						
 					//estimate camera pose using nl_kneip_ransac
 					updated_iter = iteration;
-					nl_kneip_ransac<double>(adapter, thre_2d, thre_nl, updated_iter, 0.99);
+					nl_kneip_ransac<double>(adapter, thre_2d, thre_nl, updated_iter, confidence);
 					e_nk.col(jj) = calc_percentage_err<double>(R, t, &adapter);
 
 					//estimate camera pose using nl_shinji_ransac
 					updated_iter = iteration;
-					nl_shinji_ransac<double>(adapter, thre_3d, thre_nl, updated_iter, 0.99);
+					nl_shinji_ransac<double>(adapter, thre_3d, thre_nl, updated_iter, confidence);
 					e_ns.col(jj) = calc_percentage_err<double>(R, t, &adapter);
 
 					updated_iter = iteration;
-					nl_shinji_kneip_ransac<double>(adapter, thre_3d, thre_2d, thre_nl, updated_iter, 0.99);
+					nl_shinji_kneip_ransac<double>(adapter, thre_3d, thre_2d, thre_nl, updated_iter, confidence);
 					e_nsk.col(jj) = calc_percentage_err<double>(R, t, &adapter);
 
 					//estimate least square optimized solutions
@@ -245,22 +246,22 @@ void test_all(){
 				cout << "figure;" << endl;
 				cout << "boxplot([t" << cc << "_dw, t" << cc << "_opt, t" << cc << "_nsk, t" << cc << "_ns, t" << cc << "_nk, t" << cc << "_sk, t" << cc << "_s, t" << cc << "_k, t" << cc << "_l] ," <<
 				          "{ 'dw', 'opt', 'nl+s+k', 'nl+s', 'nl+k', 's+k', 's', 'k', 'l' }); " << endl;
-				cout << "axis([0.5,8.5,0,30]);" << endl;
+				cout << "axis([0.5,9.5,0,30]);" << endl;
 				cout << "xlabel('approaches') " << endl;
 				cout << "ylabel('translational error (%)')" << endl;
 				cout << "title('noise_{3d} = " << n3d << "; noise_{2d} = " << n2d << "; noise_{nl} = " << nnl << " " << noise_model << "')" << endl;
-				cout << "set(gcf, 'Position', [0 0 200 240], 'PaperSize', [400 600]); " << endl;
-				cout << "print('tfig" << cc << ".eps','-depsc');" << endl;
+				cout << "set(gcf, 'Position', [0 0 400 480], 'PaperSize', [400 600]); " << endl;
+				//cout << "print('tfig" << cc << ".eps','-depsc');" << endl;
 				cout << endl;
 				cout << "figure;" << endl;
 				cout << "boxplot([r" << cc << "_dw, r" << cc << "_opt, r" << cc << "_nsk, r" << cc << "_ns, r" << cc << "_nk, r" << cc << "_sk, r" << cc << "_s, r" << cc << "_k, t" << cc << "_l] ," << 
 						"{'dw', 'op','nl+s+k','nl+s','nl+k','s+k','s','k', 'l'});" << endl;
-				cout << "axis([0.5,8.5,0,30]);" << endl;
+				cout << "axis([0.5,9.5,0,30]);" << endl;
 				cout << "xlabel('approaches') " << endl;
 				cout << "ylabel('rotational error (%)')" << endl;
 				cout << "title('noise_{3d} = " << n3d << "; noise_{2d} = " << n2d << "; noise_{nl} = " << nnl << " " << noise_model << "')" << endl;
-				cout << "set(gcf, 'Position', [0 0 200 240], 'PaperSize', [400 600]); " << endl;
-				cout << "print('rfig" << cc << ".eps','-depsc');" << endl;
+				cout << "set(gcf, 'Position', [400 0 400 480], 'PaperSize', [400 600]); " << endl;
+				//cout << "print('rfig" << cc << ".eps','-depsc');" << endl;
 				cout << endl;
 			}
 
@@ -276,6 +277,7 @@ void test_all(){
 		cout << "t" << cc << "_nsk ";
 		cout << "t" << cc << "_s ";
 		cout << "t" << cc << "_k ";
+		cout << "t" << cc << "_l ";
 	}
 	cout << "];" << endl;
 
@@ -290,6 +292,7 @@ void test_all(){
 		cout << "t" << cc << "_sk ";
 		cout << "t" << cc << "_s ";
 		cout << "t" << cc << "_k ";
+		cout << "t" << cc << "_l ";
 	}
 	cout << "];" << endl;
 
@@ -301,6 +304,7 @@ void test_all(){
 		cout << "r" << cc << "_nsk ";
 		cout << "r" << cc << "_s ";
 		cout << "r" << cc << "_k ";
+		cout << "r" << cc << "_l ";
 	}
 	cout << "];" << endl;
 
@@ -315,6 +319,7 @@ void test_all(){
 		cout << "r" << cc << "_sk ";
 		cout << "r" << cc << "_s ";
 		cout << "r" << cc << "_k ";
+		cout << "r" << cc << "_l ";
 	}
 	cout << "];" << endl;
 	return;

@@ -372,7 +372,7 @@ void kneip_ransac( PnPPoseAdapter<Tp>& adapter,	const Tp thre_2d_, int& Iter, Tp
 				adapter.setRcw(outModel.so3());
 				adapter.sett(outModel.translation());
 				adapter.setInlier(inliers);
-				//Iter = RANSACUpdateNumIters(confidence, (POINT_T)(adapter.getNumberCorrespondences() - votes) / adapter.getNumberCorrespondences(), K+1, Iter);
+				Iter = RANSACUpdateNumIters(confidence, (Tp)(adapter.getNumberCorrespondences() - votes) / adapter.getNumberCorrespondences(), K+1, Iter);
 			}
 		}
 		//update iterations

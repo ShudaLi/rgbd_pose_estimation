@@ -271,7 +271,7 @@ void nl_kneip_ransac(NormalAOPoseAdapter<Tp>& adapter, const Tp thre_2d_, const 
 
 			//cout << inliers_kneip.inverse() << endl << endl;
 			//adapter.printInlier();
-			//Iter = RANSACUpdateNumIters(confidence, (POINT_T)(adapter.getNumberCorrespondences() * 2 - votes_kneip) / adapter.getNumberCorrespondences() / 2, K, Iter);
+			Iter = RANSACUpdateNumIters(confidence, (Tp)(adapter.getNumberCorrespondences() * 2 - votes_kneip) / adapter.getNumberCorrespondences() / 2, K, Iter);
 		}
 	}
 	PnPPoseAdapter<Tp>* pAdapter = &adapter;
@@ -341,7 +341,7 @@ void nl_shinji_ransac(NormalAOPoseAdapter<Tp>& adapter, const Tp thre_3d_, const
 				adapter.sett(itr->translation());
 				adapter.setInlier(inliers);
 				//adapter.printInlier();
-				//Iter = RANSACUpdateNumIters(confidence, (POINT_T)(adapter.getNumberCorrespondences() * 2 - votes) / adapter.getNumberCorrespondences() / 2, K, Iter);
+				Iter = RANSACUpdateNumIters(confidence, (Tp)(adapter.getNumberCorrespondences() * 2 - votes) / adapter.getNumberCorrespondences() / 2, K, Iter);
 			}
 		}
 	}
@@ -430,7 +430,7 @@ void nl_shinji_kneip_ransac(NormalAOPoseAdapter<Tp>& adapter,
 
 				//cout << inliers.inverse() << endl << endl;
 				//adapter.printInlier();
-				//Iter = RANSACUpdateNumIters(confidence, (POINT_T)(adapter.getNumberCorrespondences() * 3 - votes) / adapter.getNumberCorrespondences() / 3, K, Iter);
+				Iter = RANSACUpdateNumIters(confidence, (Tp)(adapter.getNumberCorrespondences() * 3 - votes) / adapter.getNumberCorrespondences() / 3, K, Iter);
 			}
 		}//for(vector<RT>::iterator itr = v_solutions.begin() ...
 	}//for(int ii = 0; ii < Iter; ii++)
