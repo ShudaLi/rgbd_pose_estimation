@@ -63,9 +63,11 @@ Sophus::SE3<Tp> shinji(
 	Matrix<Tp, 3, 3> U = svd.matrixU();
 	Matrix<Tp, 3, 3> V = svd.matrixV();
 	Matrix<Tp, 3, 1> D = svd.singularValues();
+	Matrix<Tp, 3, 3> Tmp = U*V.transpose();
+	Tp d = Tmp.determinant();
 	Sophus::SO3<Tp> R_tmp;
-	if (M.determinant() < 0){
-		Matrix<Tp, 3, 3> I = Matrix<Tp, 3, 3>::Identity(); I(2, 2) = -1; D(2) *= -1;
+	if (d < Tp(0)) {
+		Matrix<Tp, 3, 3> I = Matrix<Tp, 3, 3>::Identity(); I(2, 2) = -1;
 		R_tmp = Sophus::SO3<Tp>(U*I*V.transpose());
 	}
 	else{

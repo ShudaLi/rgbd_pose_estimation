@@ -192,7 +192,9 @@ Sophus::SE3<Tp>  nl_shinji_ls(const Matrix<Tp, Dynamic, Dynamic> & Xw_, const Ma
 	Matrix<Tp, 3, 3> V = svd.matrixV();
 	Matrix<Tp, 3, 1> D = svd.singularValues();
 	Sophus::SO3<Tp> R_tmp;
-	if (M.determinant() < 0){
+	Matrix<Tp, 3, 1> TMP = U*V.transpose();
+	Tp d = TMP.determinant();
+	if (d < 0) {
 		Matrix<Tp, 3, 3> I = Matrix<Tp, 3, 3>::Identity(); I(2, 2) = -1; D(2) *= -1;
 		R_tmp = Sophus::SO3<Tp>(U*I*V.transpose());
 	}
@@ -510,10 +512,14 @@ void nl_shinji_kneip_ls(NormalAOPoseAdapter<Tp>& adapter)
 		JacobiSVD< M3 > svd(M33, ComputeFullU | ComputeFullV);
 		//[U S V]=svd(M);
 		//R=U*V';
+		
+		
 		M3 U = svd.matrixU();
 		M3 V = svd.matrixV();
 		V3 D = svd.singularValues();
-		if (M33.determinant() < 0){
+		M3 TMP = U*V.transpose();
+		Tp d = TMP.determinant();
+		if (d < 0) {
 			M3 I = M3::Identity(); I(2, 2) = -1; //D(2) *= -1;
 			R_opt = Sophus::SO3<Tp>(U*I*V.transpose());
 		}
