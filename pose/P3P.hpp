@@ -190,14 +190,15 @@ void kneip_main(const Matrix<Tp, Dynamic, Dynamic>& X_w, const Matrix<Tp, Dynami
 
 	for (int i = 0; i < 4; i++)
 	{
+		if (realRoots[i] != realRoots[i]) continue;
 		Tp cot_alpha =
 			(-f_1*p_1 / f_2 - realRoots[i] * p_2 + d_12*b) /
 			(-f_1*realRoots[i] * p_2 / f_2 + p_1 - d_12);
 
 		Tp cos_theta = realRoots[i]; if (cos_theta > Tp(1) || cos_theta < Tp(-1)) continue;
-		Tp sin_theta = sqrt(1 - pow(realRoots[i], 2));
-		Tp sin_alpha = sqrt(1 / (pow(cot_alpha, 2) + 1));
-		Tp cos_alpha = sqrt(1 - pow(sin_alpha, 2));
+		Tp sin_theta = sqrt(1 - realRoots[i] * realRoots[i]);
+		Tp sin_alpha = sqrt(1 / (cot_alpha*cot_alpha + 1));
+		Tp cos_alpha = sqrt(1 - sin_alpha* sin_alpha);
 
 		if (cot_alpha < 0)
 			cos_alpha = -cos_alpha;
