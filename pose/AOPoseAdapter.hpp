@@ -208,7 +208,7 @@ template <typename Tp>
 void AOPoseAdapter<Tp>::cvtInlier()
 {
 	_vInliersAO.clear();
-	_vInliersAO.reserve(getNumberCorrespondences());
+	_vInliersAO.reserve(this->getNumberCorrespondences());
 	for (short r = 0; r < (short)_inliers_3d.rows(); r++) {
 		if (1 == _inliers_3d[r]){
 			_vInliersAO.push_back(r);

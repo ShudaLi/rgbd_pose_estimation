@@ -62,7 +62,7 @@ Sophus::SE3<Tp> shinji(
 	//R=U*V';
 	Matrix<Tp, 3, 3> U = svd.matrixU();
 	Matrix<Tp, 3, 3> V = svd.matrixV();
-	Matrix<Tp, 3, 1> D = svd.singularValues();
+	// Matrix<Tp, 3, 1> D = svd.singularValues();
 	Matrix<Tp, 3, 3> Tmp = U*V.transpose();
 	Tp d = Tmp.determinant();
 	Sophus::SO3<Tp> R_tmp;
@@ -108,7 +108,7 @@ void shinji_ransac(AOPoseAdapter<Tp>& adapter,
 
 		if (invalid_sample) continue;
 		//calc R&t		
-		RT* p_solution; RT solution; 
+		RT solution; 
 
 		solution = shinji<Tp>(eimX_world, eimX_cam, K);
 			
@@ -142,7 +142,7 @@ void shinji_ransac(AOPoseAdapter<Tp>& adapter,
 template< typename Tp >
 void shinji_ls(AOPoseAdapter<Tp>& adapter){
 	typedef Matrix<Tp, Dynamic, Dynamic> MatrixX;
-	typedef Matrix<Tp, 3, 1> Point3;
+	// typedef Matrix<Tp, 3, 1> Point3;
 	typedef Sophus::SE3<Tp> RT;
 
 	const vector<short>& vInliers = adapter.getInlierIdx();

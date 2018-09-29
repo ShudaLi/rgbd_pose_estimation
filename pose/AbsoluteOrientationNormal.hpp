@@ -79,10 +79,10 @@ void nl_2p( const Matrix<Tp,3,1>& pt1_c, const Matrix<Tp,3,1>& nl1_c, const Matr
 			const Matrix<Tp,3,1>& pt1_w, const Matrix<Tp,3,1>& nl1_w, const Matrix<Tp,3,1>& pt2_w, 
 			Sophus::SE3<Tp>* p_solution){
 	//Drost, B., Ulrich, M., Navab, N., & Ilic, S. (2010). Model globally, match locally: Efficient and robust 3D object recognition. In CVPR (pp. 998?005). Ieee. http://doi.org/10.1109/CVPR.2010.5540108
-	typedef Matrix<Tp, Dynamic, Dynamic> MatrixX;
+	// typedef Matrix<Tp, Dynamic, Dynamic> MatrixX;
 	typedef Matrix<Tp, 3, 1> V3;
 	typedef Sophus::SO3<Tp> ROTATION;
-	typedef Sophus::SE3<Tp> RT;
+	// typedef Sophus::SE3<Tp> RT;
 
 	V3 c_w = pt1_w; // c_w is the origin of coordinate g w.r.t. world
 
@@ -96,7 +96,7 @@ void nl_2p( const Matrix<Tp,3,1>& pt1_c, const Matrix<Tp,3,1>& nl1_c, const Matr
 	ROTATION R_g_f_w(q_g_f_w);
 	//cout << R_g_f_w << endl;
 
-	V3 nl_x = R_g_f_w * nl1_w;
+	// V3 nl_x = R_g_f_w * nl1_w;
 	axis.normalize();
 
 	V3 c_c = pt1_c;
@@ -318,7 +318,7 @@ void nl_shinji_ransac(NormalAOPoseAdapter<Tp>& adapter, const Tp thre_3d_, const
 			//collect votes
 			int votes = 0;
 			inliers.setZero();
-			Point3 eivE; Point3 pc; Tp score;
+			Point3 eivE; Point3 pc; 
 			for (int c = 0; c < adapter.getNumberCorrespondences(); c++) {
 				if (adapter.isValid(c)){
 					//voted by N-N correspondences
@@ -447,10 +447,10 @@ void nl_shinji_kneip_ransac(NormalAOPoseAdapter<Tp>& adapter,
 template< typename Tp > 
 void nl_shinji_kneip_ls(NormalAOPoseAdapter<Tp>& adapter)
 {
-	typedef Matrix<Tp, Dynamic, Dynamic> MatrixX;
+	// typedef Matrix<Tp, Dynamic, Dynamic> MatrixX;
 	typedef Matrix<Tp, 3, 1> V3;
 	typedef Matrix<Tp, 3, 3> M3;
-	typedef Matrix<Tp, 3, 4> RT;
+	// typedef Matrix<Tp, 3, 4> RT;
 	if(adapter.getMaxVotes() == 0) return;
 
 	//Compute the centroid of each point set
@@ -516,7 +516,7 @@ void nl_shinji_kneip_ls(NormalAOPoseAdapter<Tp>& adapter)
 		
 		M3 U = svd.matrixU();
 		M3 V = svd.matrixV();
-		V3 D = svd.singularValues();
+		// V3 D = svd.singularValues();
 		M3 TMP = U*V.transpose();
 		Tp d = TMP.determinant();
 		if (d < 0) {

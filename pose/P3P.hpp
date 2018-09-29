@@ -1,7 +1,9 @@
 #ifndef BTL_P3P_POSE_HEADER
 #define BTL_P3P_POSE_HEADER
 
+
 #include <Eigen/Dense>
+#include "Utility.hpp"
 #include "PnPPoseAdapter.hpp"
 
 using namespace Eigen;
@@ -224,7 +226,7 @@ void kneip_main(const Matrix<Tp, Dynamic, Dynamic>& X_w, const Matrix<Tp, Dynami
 		//R = N.transpose()*R.transpose()*RR;
 		R = RR.transpose()*R*N;
 
-		p_solutions_->push_back(Sophus::SE3<Tp>(Sophus::SO3<Tp>(R), Sophus::SE3<Tp>::Point(-R*C)));
+		p_solutions_->push_back(Sophus::SE3<Tp>(Sophus::SO3<Tp>(R), -R*C));
 	}
 }
 
@@ -254,7 +256,7 @@ bool kneip(const Matrix<Tp, Dynamic, Dynamic>& X_w_, const Matrix<Tp, Dynamic, D
 	
 	Tp minScore = numeric_limits<Tp>::max();
 	int minIndex = -1;
-	for (int i = 0; i < v_solutions.size(); i++)
+	for (int i = 0; i < (int)v_solutions.size(); i++)
 	{
 		Point3 pc = v_solutions[i].so3() * X_w_.col(3) + v_solutions[i].translation();// transform pw into pc
 
@@ -330,7 +332,7 @@ void kneip_ransac( PnPPoseAdapter<Tp>& adapter,	const Tp thre_2d_, int& Iter, Tp
 		//use the fourth point to verify the estimation.
 		Tp minScore = 1000000.0;
 		int minIndex = -1;
-		for (int i = 0; i < solutions.size(); i++)
+		for (int i = 0; i < (int)solutions.size(); i++)
 		{
 			Point3 pw = adapter.getPointGlob(selected_cols[3]);
 			Point3 pc = solutions[i].so3() * pw + solutions[i].translation();// transform pw into pc
@@ -385,7 +387,7 @@ void kneip_ransac( PnPPoseAdapter<Tp>& adapter,	const Tp thre_2d_, int& Iter, Tp
 
 template< typename Tp > /*Eigen::Matrix<float,-1,-1,0,-1,-1> = Eigen::MatrixXf*/
 void lsq_pnp( PnPPoseAdapter<Tp>& adapter,	int& Iter){
-	typedef Sophus::SE3<Tp> RT;
+	// typedef Sophus::SE3<Tp> RT;
 	typedef Matrix<Tp, 3, 1> Point3;
 
 	int total = adapter.getNumberCorrespondences();

@@ -200,7 +200,7 @@ void PnPPoseAdapter<Tp>::setInlier(const Matrix<short, Dynamic, Dynamic>& inlier
 template <typename Tp>
 Tp PnPPoseAdapter<Tp>::getError(int index) const
 {
-	Point3 Xc = _Rcw * getPointGlob(index) + _t;
+	Point3 Xc = _R_cw * getPointGlob(index) + _t_w;
 	Xc.normalize();
 	return Xc.cross(getBearingVector(index)).norm();
 }

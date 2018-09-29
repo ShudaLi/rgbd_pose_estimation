@@ -109,7 +109,7 @@ void test_all(){
 
 	vector<vector<int> > combination;
 
-	for (int a = 0; a < v_noise_3d.size(); a++)	{
+	for (int a = 0; a < (int)v_noise_3d.size(); a++)	{
 		vector<int> sub;
 		sub.push_back(a);
 		sub.push_back(a);
@@ -123,11 +123,11 @@ void test_all(){
 	cout << "%noise_thre_2d = " << thre_2d << " noise_thre_3d = " << thre_3d << " normal_thre = " << thre_nl << endl;
 	MatrixXd e_nsk(2, test_n), e_sk(2, test_n), e_s(2, test_n), e_k(2, test_n), e_l(2, test_n);// m0.setZero(); m1.setZero(); m2.setZero(); m3.setZero();
 	MatrixXd e_opt(2, test_n), e_ns(2, test_n), e_nk(2, test_n), e_dw(2, test_n);// m0.setZero(); m1.setZero(); m2.setZero(); m3.setZero();
-	for (int cc = 0; cc < combination.size(); cc++)
+	for (int cc = 0; cc < (int)combination.size(); cc++)
 	{
-		for (int oo = 0; oo < v_or.size(); oo++)
+		for (int oo = 0; oo < (int)v_or.size(); oo++)
 		{
-			for (int ii = 0; ii < v_iter.size(); ii++)
+			for (int ii = 0; ii < (int)v_iter.size(); ii++)
 			{
 				iteration = v_iter[ii];
 				cout << "%iteration = " << iteration << endl;
@@ -270,7 +270,7 @@ void test_all(){
 	}
 
 	cout << "SimpT = [";
-	for (int cc = 0; cc < combination.size(); cc++)
+	for (int cc = 0; cc < (int)combination.size(); cc++)
 	{
 		//cout << "t" << cc << "_dw ";
 		cout << "t" << cc << "_opt ";
@@ -282,7 +282,7 @@ void test_all(){
 	cout << "];" << endl;
 
 	cout << "FullT = [";
-	for (int cc = 0; cc < combination.size(); cc++)
+	for (int cc = 0; cc < (int)combination.size(); cc++)
 	{
 		//cout << "t" << cc << "_dw ";
 		cout << "t" << cc << "_opt ";
@@ -297,7 +297,7 @@ void test_all(){
 	cout << "];" << endl;
 
 	cout << "SimpR = [";
-	for (int cc = 0; cc < combination.size(); cc++)
+	for (int cc = 0; cc < (int)combination.size(); cc++)
 	{
 		//cout << "t" << cc << "_dw ";
 		cout << "r" << cc << "_opt ";
@@ -309,7 +309,7 @@ void test_all(){
 	cout << "];" << endl;
 
 	cout << "FullR = [";
-	for (int cc = 0; cc < combination.size(); cc++)
+	for (int cc = 0; cc < (int)combination.size(); cc++)
 	{
 		//cout << "r" << cc << "_dw ";
 		cout << "r" << cc << "_opt ";

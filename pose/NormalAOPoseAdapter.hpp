@@ -23,6 +23,7 @@ protected:
 	using PnPPoseAdapter<Tp>::_bearingVectors;
 	using PnPPoseAdapter<Tp>::_points_g;
 	using AOPoseAdapter<Tp>::_points_c;
+	typedef typename PoseAdapterBase<Tp>::Point3 Point3;
 
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -221,7 +222,7 @@ template <typename Tp>
 void NormalAOPoseAdapter<Tp>::cvtInlier()
 {
 	_vInliersNN.clear();
-	_vInliersNN.reserve(getNumberCorrespondences());
+	_vInliersNN.reserve(this->getNumberCorrespondences());
 	for (short r = 0; r < (short)_inliers_nl.rows(); r++) {
 		if (1 == _inliers_nl[r]){
 			_vInliersNN.push_back(r);
