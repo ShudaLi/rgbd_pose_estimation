@@ -234,6 +234,56 @@ void simulate_2d_3d_correspondences(const Sophus::SO3<T>& R_cw_, const Matrix<T,
 	return;
 }
 
+
+template< typename T >
+void simulate_3d_3d_correspondences(const Sophus::SO3<T>& R_cw_, const Matrix<T, 3, 1>& t_w_,
+	int number_, T noise_, T outlier_ratio_, T min_depth_, T max_depth_, T f_, bool use_guassian_,
+	Matrix<T, Dynamic, Dynamic>* pQ_, // *pQ_: points with noise in 3-D world system 
+	Matrix<T, Dynamic, Dynamic>* pP_gt = NULL, // *pP_gt: ground truth of 3-D points in camera system 
+	Matrix<short, Dynamic, Dynamic>* p_all_weights_ = NULL)
+{
+	typedef Matrix<T, Dynamic, Dynamic> MX;
+	typedef Matrix<short, Dynamic, Dynamic> MXs;
+
+	MXs w(number_, 1); //dynamic weights for 2-3 correspondences
+	//1. generate 3-D points P in CRS
+	MX P_gt = simulate_rand_point_cloud_in_frustum<T>(number_, f_, min_depth_, max_depth_); //pt cloud in camera system
+	//3. transform from camera to world coordinate system
+	pQ_->resize(3, number_);
+	for (int i = 0; i < number_; i++) {
+		pQ_->col(i) = R_cw_.inverse() * (P_gt.col(i) - t_w_);
+	}
+	//4. add 3-D noise
+	for (int i = 0; i < number_; i++) {
+		Matrix<T, 3, 1> rv; //random variable
+		if (use_guassian_)
+			rv = Matrix<T, 3, 1>(distribution(generator), distribution(generator), distribution(generator));
+		else
+			rv = MX::Random(3, 1);
+		w(i) = short(3276. / rv.norm());
+		pQ_->col(i) = pQ_->col(i) + noise_*rv;
+	}
+
+	//5. add 2-D outliers
+	int out = int(outlier_ratio_*number_ + .5);
+	MX out_points = simulate_rand_point_cloud_in_frustum<T>(out, f_, min_depth_, max_depth_); //outliers remain in CRS
+	RandomElements<int> re(number_);
+	vector<int> vIdx;	re.run(out, &vIdx);
+	for (int i = 0; i < out; i++){
+		pQ_->col(vIdx[i]) = out_points.col(i);
+	}
+	
+	if (pP_gt){
+		*pP_gt = P_gt; //note that pt_c was not polluted by outliers
+	}
+
+	if (p_all_weights_){
+		assert(p_all_weights_->rows() == number_ && p_all_weights_->cols() == 3);
+		p_all_weights_->col(0) = w;
+	}
+	return;
+}
+
 template< typename T >
 void simulate_2d_3d_nl_correspondences(const Sophus::SO3<T>& R_cw_, const Matrix<T, 3, 1>& t_w_, //rotation and translation in world reference system
 	int number_,  // total number of correspondences

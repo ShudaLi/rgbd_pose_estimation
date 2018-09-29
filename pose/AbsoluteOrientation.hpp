@@ -3,6 +3,7 @@
 
 #include <Eigen/Dense>
 #include "AOPoseAdapter.hpp"
+#include "AOOnlyPoseAdapter.hpp"
 #include "P3P.hpp"
 
 using namespace Eigen;
@@ -94,6 +95,63 @@ void shinji_ransac(AOPoseAdapter<Tp>& adapter,
 		//randomly select K candidates
 		vector<int> selected_cols;
 		re.run(K, &selected_cols);
+		MatrixX eimX_world(3, K), eimX_cam(3, K);
+		bool invalid_sample = false;
+		for (int nSample = 0; nSample < K; nSample++) {
+			eimX_world.col(nSample) = adapter.getPointGlob(selected_cols[nSample]);
+			if (adapter.isValid(selected_cols[nSample])){
+				eimX_cam.col(nSample) = adapter.getPointCurr(selected_cols[nSample]);
+			}
+			else{
+				invalid_sample = true;
+			}
+		}
+
+		if (invalid_sample) continue;
+		//calc R&t		
+		RT solution = shinji<Tp>(eimX_world, eimX_cam, K);
+			
+		//collect votes
+		int votes = 0;
+		Matrix<short, Dynamic, Dynamic> inliers(adapter.getNumberCorrespondences(),2); inliers.setZero();
+		for (int c = 0; c < adapter.getNumberCorrespondences(); c++) {
+			if (adapter.isValid(c)){
+				Point3 eivE = adapter.getPointCurr(c) - (solution.so3() * adapter.getPointGlob(c) + solution.translation());
+				if (eivE.norm() < dist_thre_3d_){
+					inliers(c,1) = 1;
+					votes++;
+				}
+			}
+		}
+
+		if (votes > adapter.getMaxVotes()){
+			adapter.setMaxVotes( votes );
+			adapter.setRcw(solution.so3());
+			adapter.sett(solution.translation());
+			adapter.setInlier(inliers);
+			Iter = RANSACUpdateNumIters(confidence, (Tp)(adapter.getNumberCorrespondences() - votes) / adapter.getNumberCorrespondences(), K, Iter);
+		}
+	}
+	adapter.cvtInlier();
+
+	return;
+}
+
+template< typename Tp >
+void shinji_ransac2(AOOnlyPoseAdapter<Tp>& adapter, 
+	const Tp dist_thre_3d_, int& Iter, Tp confidence = 0.99){
+	typedef Matrix<Tp, Dynamic, Dynamic> MatrixX;
+	typedef Matrix<Tp, 3, 1> Point3;
+	typedef Sophus::SE3<Tp> RT;
+
+	RandomElements<int> re((int)adapter.getNumberCorrespondences());
+	const int K = 3;
+
+	adapter.setMaxVotes(-1);
+	for (int ii = 0; ii < Iter; ii++)	{
+		//randomly select K candidates
+		vector<int> selected_cols;
+		re.run(K, &selected_cols);
 		MatrixX eimX_world(3, K), eimX_cam(3, K), bv(3, K);
 		bool invalid_sample = false;
 		for (int nSample = 0; nSample < K; nSample++) {
@@ -108,9 +166,7 @@ void shinji_ransac(AOPoseAdapter<Tp>& adapter,
 
 		if (invalid_sample) continue;
 		//calc R&t		
-		RT solution; 
-
-		solution = shinji<Tp>(eimX_world, eimX_cam, K);
+		RT solution = shinji<Tp>(eimX_world, eimX_cam, K);
 			
 		//collect votes
 		int votes = 0;
@@ -124,7 +180,6 @@ void shinji_ransac(AOPoseAdapter<Tp>& adapter,
 				}
 			}
 		}
-		//cout << endl;
 
 		if (votes > adapter.getMaxVotes()){
 			adapter.setMaxVotes( votes );
@@ -243,7 +298,6 @@ void shinji_kneip_ransac(AOPoseAdapter<Tp>& adapter, const Tp dist_thre_3d_, con
 					votes++;
 				}
 			}
-			//cout << endl;
 
 			if (votes > adapter.getMaxVotes()){
 				adapter.setMaxVotes(votes);
