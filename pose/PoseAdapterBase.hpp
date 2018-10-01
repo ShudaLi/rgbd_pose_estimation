@@ -31,7 +31,8 @@ class PoseAdapterBase
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	typedef Matrix<Tp, 3, 1> Vector3;
-	typedef Sophus::SO3<Tp> SO3_T;
+  typedef Sophus::SO3<Tp> SO3_T;
+	typedef Sophus::SE3<Tp> SE3_T;
 
 	typedef Matrix<Tp, 3, 1> Point3;
 
@@ -125,6 +126,8 @@ public:
   void setFocal(const Tp fx, const Tp fy) { _fx = fx; _fy = fy; };
 
   Tp getFocal() const { return (_fx + _fy) /2; };
+
+  SE3_T getTcw(){ return SE3_T(_R_cw, _t_w); }
 
 
 protected:

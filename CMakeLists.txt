@@ -36,12 +36,14 @@ set_target_properties(rgbd_pose_estimation PROPERTIES LINKER_LANGUAGE CXX)
 file(GLOB TESTER_SOURCE "TestMain.cpp" )
 message(STATUS "header names: ${TESTER_SOURCE}")
 
-# add_executable( example ${TESTER_SOURCE} )
-# target_link_libraries( example  opencv_core  opencv_imgproc opencv_calib3d)
+add_executable( example ${TESTER_SOURCE} )
+target_link_libraries( example  opencv_core  opencv_imgproc opencv_calib3d)
 
 add_executable( simple SimpleMain.cpp )
 target_link_libraries( simple  opencv_core  opencv_imgproc opencv_calib3d)
 
+add_library( absolute SHARED Library.cpp )
+target_link_libraries( absolute  opencv_core  opencv_imgproc opencv_calib3d)
 
 
 

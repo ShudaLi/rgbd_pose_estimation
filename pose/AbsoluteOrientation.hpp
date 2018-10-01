@@ -220,6 +220,53 @@ void shinji_ls(AOPoseAdapter<Tp>& adapter){
 }
 
 template< typename Tp >
+void shinji_ls1(AOOnlyPoseAdapter<Tp>& adapter){
+	typedef Matrix<Tp, Dynamic, Dynamic> MatrixX;
+	typedef Sophus::SE3<Tp> RT;
+
+	const vector<short>& vInliers = adapter.getInlierIdx();
+	int K = vInliers.size();
+	MatrixX Xw(3, K);
+	MatrixX Xc(3, K);
+
+	for (int ii = 0; ii < K; ii++)	{
+		short idx = vInliers[ii];
+		Xw.col(ii) = adapter.getPointGlob(idx);
+		Xc.col(ii) = adapter.getPointCurr(idx);
+	}
+
+	RT solution = shinji<Tp>(Xw, Xc, K);
+
+	adapter.setRcw(solution.so3());
+	adapter.sett(solution.translation());
+
+	return;
+}
+
+template< typename Tp >
+void shinji_ls2(AOOnlyPoseAdapter<Tp>& adapter){
+	typedef Matrix<Tp, Dynamic, Dynamic> MatrixX;
+	// typedef Matrix<Tp, 3, 1> Point3;
+	typedef Sophus::SE3<Tp> RT;
+
+	int K = adapter.getNumberCorrespondences();
+	MatrixX Xw(3, K);
+	MatrixX Xc(3, K);
+
+	for (int ii = 0; ii < K; ii++)	{
+		Xw.col(ii) = adapter.getPointGlob(ii);
+		Xc.col(ii) = adapter.getPointCurr(ii);
+	}
+
+	RT solution = shinji<Tp>(Xw, Xc, K);
+
+	adapter.setRcw(solution.so3());
+	adapter.sett(solution.translation());
+
+	return;
+}
+
+template< typename Tp >
 bool assign_sample(const AOPoseAdapter<Tp>& adapter, const vector<int>& selected_cols_, 
 	Matrix<Tp, Dynamic, Dynamic>* p_X_w_, Matrix<Tp, Dynamic, Dynamic>* p_X_c_, Matrix<Tp, Dynamic, Dynamic>* p_bv_){
 	int K = (int)selected_cols_.size() - 1;

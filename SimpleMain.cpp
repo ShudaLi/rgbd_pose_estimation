@@ -87,7 +87,7 @@ void test_all(){
 				&Q, &P, &all_weights);
 		}
 
-		AOOnlyPoseAdapter<double> adapter(P, Q, t, R);
+		AOOnlyPoseAdapter<double> adapter(P, Q);
 		adapter.setFocal(f, f);
 		//estimate camera pose using shinji_ransac
 		updated_iter = iteration;
