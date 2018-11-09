@@ -91,6 +91,7 @@ public:
   bool isInlier23(int index) const;
   Tp weight23(int index) const;
   void sortIdx();
+  void getSortedIdx(vector<int>& select_) const;
 protected:
 	/** Reference to the bearing-vectors expressed in the camera-frame */
 	const MatrixX & _bearingVectors; //normalized 2d homogeneous coordinate
@@ -242,6 +243,15 @@ void PnPPoseAdapter<Tp>::sortIdx(){
     _idx = sortIndexes<Tp>( weigh );
 }
 
-
+template <typename Tp>
+void PnPPoseAdapter<Tp>::getSortedIdx(vector<int>& select_) const{
+    //sort the index according to weights 
+    for (int i = 0; i < (int)select_.size(); ++i)
+    {
+    	int j = select_[i];
+    	if(j < (int)_idx.size())
+    		select_[i] = _idx[j];
+    }
+}
 
 #endif 

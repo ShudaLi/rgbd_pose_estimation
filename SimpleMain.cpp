@@ -100,7 +100,7 @@ void test_3d_2d(){
 
     int iteration = 1000;
     int updated_iter = iteration;
-    int test_n = 1;
+    int test_n = 100;
     string noise_model = "Gaussian";
 
     data_type thre_3d = 0.06; //meter
@@ -149,12 +149,11 @@ void test_3d_2d(){
 
 
 void test_prosac(){
-    std::shared_ptr<RandomNumberGenerator<data_type> > rng = std::make_shared<RandomNumberGenerator<data_type> >();
     ProsacSampler<data_type> ps(4, 100);
     for (int i = 0; i < 1000; ++i)
     {
         vector<int> select;
-        ps.Sample(&select);
+        ps.sample(&select);
         cout << i << " ";
         for(int j=0; j < (int)select.size(); j++)
             cout << select[j] << " ";
@@ -164,8 +163,8 @@ void test_prosac(){
 
 int main()
 {
-    test_prosac();
-    // test_3d_2d();
+    // test_prosac();
+    test_3d_2d();
     // test_3d_3d();
 
     return 0;

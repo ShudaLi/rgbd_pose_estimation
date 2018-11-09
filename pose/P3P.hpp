@@ -396,13 +396,14 @@ void kneip_prosac( PnPPoseAdapter<Tp>& adapter,	const Tp thre_2d_, int& Iter, Tp
 
 	adapter.sortIdx();
 
-	RandomElements<int> re(adapter.getNumberCorrespondences());
 	const int K = 4;
+	ProsacSampler<Tp> ps(K, adapter.getNumberCorrespondences());
 	adapter.setMaxVotes(-1);
 	for (int i = 0; i < Iter; i++)	{
 		//randomly select K candidates
 		vector<int> selected_cols;
-		re.run(K, &selected_cols);
+		ps.sample(&selected_cols);
+		adapter.getSortedIdx(selected_cols);
 
 		vector< RT > solutions = kneip<Tp>(adapter, selected_cols[0], selected_cols[1], selected_cols[2]);
 		//use the fourth point to verify the estimation.

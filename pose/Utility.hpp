@@ -162,49 +162,49 @@ template< class T >
 class ProsacSampler {
 public:
     ProsacSampler( const int min_num_samples, const int num_datapoints )
-    : min_num_samples_(min_num_samples) 
+    : _m(min_num_samples) 
     {
-        num_datapoints_ = num_datapoints;
-        ransac_convergence_iterations_ = 20000;
-        kth_sample_number_ = 1;
+        _N = num_datapoints;
+        _T_N = 20000;
+        _t = 1;
     }
     ~ProsacSampler() {}
 
     // Set the sample such that you are sampling the kth prosac sample (Eq. 6).
-    void SetSampleNumber(int k)
+    void setSampleNumber(int k)
     {
-        kth_sample_number_ = k;
+        _t = k;
     }
 
     // Samples the input variable data and fills the vector subset with the prosac
     // samples.
     // NOTE: This assumes that data is in sorted order by quality where data[i] is
     // of higher quality than data[j] for all i < j.
-    bool Sample(std::vector<int>* subset_indices)
+    bool sample(std::vector<int>* subset_indices)
     {
         // Set t_n according to the PROSAC paper's recommendation.
-        double t_n = ransac_convergence_iterations_;
-        int n = this->min_num_samples_;
+        T t_n = _T_N;
+        int n = this->_m;
         // From Equations leading up to Eq 3 in Chum et al.
-        for (int i = 0; i < this->min_num_samples_; i++) {
-            t_n *= static_cast<double>(n - i) / (num_datapoints_ - i);
+        for (int i = 0; i < this->_m; i++) {
+            t_n *= static_cast<T >(n - i) / (_N - i);
         }
 
-        double t_n_prime = 1.0;
+        T t_n_prime = 1.0;
         // Choose min n such that T_n_prime >= t (Eq. 5).
-        for (int t = 1; t <= kth_sample_number_; t++) {
-            if (t > t_n_prime && n < num_datapoints_) {
-                double t_n_plus1 = (t_n * (n + 1.0)) / (n + 1.0 - this->min_num_samples_);
+        for (int t = 1; t <= _t; t++) {
+            if (t > t_n_prime && n < _N) {
+                T t_n_plus1 = (t_n * (n + 1.0)) / (n + 1.0 - this->_m);
                 t_n_prime += ceil(t_n_plus1 - t_n);
                 t_n = t_n_plus1;
                 n++;
             }
         }
-        subset_indices->reserve(this->min_num_samples_);
-        if (t_n_prime < kth_sample_number_) {
+        subset_indices->reserve(this->_m);
+        if (t_n_prime < _t) {
             // Randomly sample m data points from the top n data points.
             std::vector<int> random_numbers;
-            for (int i = 0; i < this->min_num_samples_; i++) {
+            for (int i = 0; i < this->_m; i++) {
                 // Generate a random number that has not already been used.
                 int rand_number;
                 while (std::find(random_numbers.begin(),
@@ -221,7 +221,7 @@ public:
         } else {
             std::vector<int> random_numbers;
             // Randomly sample m-1 data points from the top n-1 data points.
-            for (int i = 0; i < this->min_num_samples_ - 1; i++) {
+            for (int i = 0; i < this->_m - 1; i++) {
               // Generate a random number that has not already been used.
               int rand_number;
               while (std::find(random_numbers.begin(),
@@ -237,121 +237,17 @@ public:
             // Make the last point from the nth position.
             subset_indices->push_back(n);
         }
-        assert((int)subset_indices->size() == this->min_num_samples_);
-        kth_sample_number_++;
+        assert((int)subset_indices->size() == this->_m);
+        _t++;
         return true;
     }
 
     private:
-    int num_datapoints_;
-    // Number of iterations of PROSAC before it just acts like ransac.
-    int ransac_convergence_iterations_;
-
-    // The kth sample of prosac sampling.
-    int kth_sample_number_;
-
-    int min_num_samples_;
+    int _N; // total number of data point
+    int _T_N; // Number of iterations of PROSAC before it just acts like ransac.
+    int _t; // The kth sample of prosac sampling.
+    int _m; //minum number of samples
 };
-
-
-// A wrapper around the c++11 random generator utilities. This allows for a
-// thread-safe random number generator that may be easily instantiated and
-// passed around as an object.
-template< class T >
-class RandomNumberGenerator 
-{
-public:
-    std::mt19937 util_generator;
-    // Creates the random number generator using the current time as the seed.
-    RandomNumberGenerator(){
-        const unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-        util_generator.seed(seed);
-    }
-
-    // Creates the random number generator using the given seed.
-    RandomNumberGenerator(const unsigned seed){
-        util_generator.seed(seed);
-    }
-
-    // Seeds the random number generator with the given value.
-    void Seed(const unsigned seed){
-        util_generator.seed(seed);
-    }
-
-    // Get a random double between lower and upper (inclusive).
-    T RandFlt(const T lower, const T upper){
-        std::uniform_real_distribution<T> distribution(lower, upper);
-        return distribution(util_generator);
-    }
-
-    // Get a random double between lower and upper (inclusive).
-    int RandInt(const int lower, const int upper){
-        std::uniform_int_distribution<int> distribution(lower, upper);
-        return distribution(util_generator);
-    }
-
-    // Generate a number drawn from a gaussian distribution.
-    T RandGaussian(const T mean, const T std_dev){
-        std::normal_distribution<T> distribution(mean, std_dev);
-        return distribution(util_generator);
-    }
-
-    inline T Rand(const T lower, const T upper) {
-        return RandFlt(lower, upper);
-    }
-
-    // Sets an Eigen type with random values between -1.0 and 1.0. This is meant
-    // to replace the Eigen::Random() functionality.
-    void SetRandom(Eigen::MatrixBase<T>* b) {
-        for (int r = 0; r < b->rows(); r++) {
-            for (int c = 0; c < b->cols(); c++) {
-            (*b)(r, c) = Rand(-1.0, 1.0);
-            }
-        }
-    }
-};
-
-
-// template< class T >
-// class ProsacRandomElements: public RandElement< int >
-// {
-// public:
-//     T _T_n;
-//     T _T_prime_n;
-//     T _n;
-//     T _n_star;
-//     int _T_N; // maximum iterations
-//     int _m;// minimum pairs of data for estimating a pose
-//     int _N;// size of all pairs 
-//     int _t;
-//     int _k_n_star;
-//     ProsacRandomElements(vector< int >& sortedIdx_, const int T_N_ = 1000, const int m_){
-//         _T_N = T_N_;
-//         _N = (int)sortedIdx_.size();
-//         _m = m_;
-//         _T_n = _T_N;
-//         for (int i = 0; i < _m; ++i)
-//             _T_n = tatic_cast<float> (_m - i) / static_cast<float> (_N - i);
-//         _T_prime_n = 1.0f;
-//         _n = static_cast<float> (m);
-
-//         // Define the n_Start coefficients from Section 2.2
-//         _n_star = static_cast<float> (_N);
-
-//         _t = 0;
-//     }
-//     ~ProsacRandomElements(){
-//     }    
-
-//     void run(vector< int > p_v_idx_ ){
-//         if( _t < k_n_star){
-
-//         }
-
-//     }
-// };
-
-
 
 
 #endif
