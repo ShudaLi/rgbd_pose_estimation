@@ -27,6 +27,24 @@ Matrix<Tp, 2, 1> calc_percentage_err(const Sophus::SO3<Tp>& R_cw_, const Matrix<
 }
 
 template< typename Tp >
+Matrix<Tp, 2, 1> calc_err(const Matrix<Tp, 4, 4>& Diff){
+	Matrix<Tp, 3, 3> R = Diff.block(0,0, 3,3);
+	AngleAxis<Tp> aa(R);
+	Matrix<Tp, 3, 1> tr = Diff.block(0,3, 3,1);
+	Tp t_e = tr.norm();
+	Tp r_e = aa.angle();
+	return Matrix<Tp, 2, 1>(t_e, r_e); 
+}
+
+template< typename Tp >
+Matrix<Tp, 2, 1> calc_err(const Matrix<Tp, 4, 4>& GT_cw_,  const Matrix<Tp, 4, 4>& SE_cw_){
+	Matrix<Tp, 4, 4> Diff = SE_cw_ * GT_cw_.inverse() ;
+	return calc_err(Diff);
+}
+
+
+
+template< typename Tp >
 Sophus::SE3<Tp> shinji(
 	const Matrix<Tp, Dynamic, Dynamic> & X_w_, 
 	const Matrix<Tp, Dynamic, Dynamic>&  X_c_, int K){
@@ -246,7 +264,6 @@ void shinji_ls1(AOOnlyPoseAdapter<Tp>& adapter){
 template< typename Tp >
 void shinji_ls2(AOOnlyPoseAdapter<Tp>& adapter){
 	typedef Matrix<Tp, Dynamic, Dynamic> MatrixX;
-	// typedef Matrix<Tp, 3, 1> Point3;
 	typedef Sophus::SE3<Tp> RT;
 
 	int K = adapter.getNumberCorrespondences();

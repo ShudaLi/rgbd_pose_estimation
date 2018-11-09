@@ -146,7 +146,7 @@ void test_all(){
 				for (int jj = 0; jj < test_n; jj++){
 					MatrixXd Q, P, U;
 					MatrixXd M, N;
-					Matrix<short, Dynamic, Dynamic> all_weights(total, 3);
+					Matrix<double, Dynamic, Dynamic> all_weights(total, 3);
 					if (!noise_model.compare("Uniform")){
 						simulate_2d_3d_nl_correspondences<double>(R, t, total, n2d, or_2d, n3d, or_3d, nnl, or_nl, min_depth, max_depth, f, false,
 							&Q, &M, &P, &N, &U, &all_weights);

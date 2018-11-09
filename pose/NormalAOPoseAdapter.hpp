@@ -73,7 +73,7 @@ public:
   virtual Point3 getNormalCurr( int index ) const;
   virtual Point3 getNormalGlob( int index ) const;
   virtual void setInlier(const Matrix<short, Dynamic, Dynamic>& inliers);
-  virtual void setWeights(const Matrix<short, Dynamic, Dynamic>& weights);
+  virtual void setWeights(const Matrix<Tp, Dynamic, Dynamic>& weights);
   virtual void printInlier() const;
   const vector<short>& getInlierIdx() const { return _vInliersNN; }
   void cvtInlier();
@@ -85,7 +85,7 @@ protected:
 
 	/** flags of inliers. */
 	Matrix<short, Dynamic, 1> _inliers_nl;
-	Matrix<short, Dynamic, 1> _weights_nl;
+	Matrix<Tp, Dynamic, 1> _weights_nl;
 
 	vector<short> _vInliersNN;
 };
@@ -195,7 +195,7 @@ void NormalAOPoseAdapter<Tp>::setInlier(const Matrix<short, Dynamic, Dynamic>& i
 }
 
 template <typename Tp>
-void NormalAOPoseAdapter<Tp>::setWeights(const Matrix<short, Dynamic, Dynamic>& weights)
+void NormalAOPoseAdapter<Tp>::setWeights(const Matrix<Tp, Dynamic, Dynamic>& weights)
 {
 	if (weights.cols() == 1){
 		PnPPoseAdapter<Tp>::setWeights(weights);

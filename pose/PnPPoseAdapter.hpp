@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <vector>
 #include <PoseAdapterBase.hpp>
+#include <Utility.hpp>
 
 using namespace std;
 using namespace Eigen;
@@ -76,7 +77,7 @@ public:
   virtual int getNumberCorrespondences() const;
 
   virtual void setInlier(const Matrix<short, Dynamic, Dynamic>& inliers);
-  virtual void setWeights(const Matrix<short, Dynamic, Dynamic>& weights);
+  virtual void setWeights(const Matrix<Tp, Dynamic, Dynamic>& weights);
   virtual void printInlier() const;
   const vector<short>& getInlierIdx() const { return _vInliersPnP;}
   void cvtInlier();
@@ -89,6 +90,7 @@ public:
 
   bool isInlier23(int index) const;
   Tp weight23(int index) const;
+  void sortIdx();
 protected:
 	/** Reference to the bearing-vectors expressed in the camera-frame */
 	const MatrixX & _bearingVectors; //normalized 2d homogeneous coordinate
@@ -96,7 +98,8 @@ protected:
 	const MatrixX & _points_g;
 	/** flags of inliers. */
 	Matrix<short, Dynamic, 1> _inliers;
-	Matrix<short, Dynamic, 1> _weights;
+	Matrix<Tp, Dynamic, 1> _weights;
+    vector<int> _idx; //stores the sorted index 
 	vector<short> _vInliersPnP;
 	/** max votes. */
 	int _max_votes;
@@ -179,7 +182,7 @@ Tp PnPPoseAdapter<Tp>::weight23(int index) const
 	if (!_weights.rows()) return Tp(1.0);
 	else{
 		assert(index < _weights.rows());
-		return Tp(_weights(index)) / numeric_limits<short>::max();
+		return _weights(index);
 	}
 }
 
@@ -206,7 +209,7 @@ Tp PnPPoseAdapter<Tp>::getError(int index) const
 }
 
 template <typename Tp>
-void PnPPoseAdapter<Tp>::setWeights(const Matrix<short, Dynamic, Dynamic>& weights)
+void PnPPoseAdapter<Tp>::setWeights(const Matrix<Tp, Dynamic, Dynamic>& weights)
 {
 	_weights = weights.col(0);
 	//memcpy(_weights.data(), weights.data(), weights.rows() * 2);
@@ -231,6 +234,14 @@ void PnPPoseAdapter<Tp>::cvtInlier()
 		}
 	}
 }
+
+template <typename Tp>
+void PnPPoseAdapter<Tp>::sortIdx(){
+    //sort the index according to weights 
+    vector<Tp> weigh(_weights.data(), _weights.data() + _weights.rows() * _weights.cols());
+    _idx = sortIndexes<Tp>( weigh );
+}
+
 
 
 #endif 

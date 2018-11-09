@@ -85,13 +85,12 @@ Sophus::SO3< T > generate_random_rotation(T max_angle_radian_, bool use_guassian
 template< typename T >
 void simulate_nl_nl_correspondences(const Sophus::SO3<T>& R_cw_, int number_, T noise_nl_, T outlier_ratio_nl_, bool use_guassian_,
 	Matrix<T, Dynamic, Dynamic>* pM_, Matrix<T, Dynamic, Dynamic>* pN_, Matrix<T, Dynamic, Dynamic>* pN_gt = NULL,
-	Matrix<short, Dynamic, Dynamic>* p_all_weights_ = NULL)
+	Matrix<T, Dynamic, Dynamic>* p_all_weights_ = NULL)
 {
 	typedef Matrix<T, 3, 1> Point3;
 	typedef Matrix<T, Dynamic, Dynamic> MX;
-	typedef Matrix<short, Dynamic, Dynamic> MXs;
 
-	MXs w(number_, 1); //dynamic weights for N-N correspondences
+	MX w(number_, 1); //dynamic weights for N-N correspondences
 	pM_->resize(3, number_); //normal in WRS
 	pN_->resize(3, number_); //normal in CRS
 	MX N_gt(3, number_); //ground truth normal in CRS
@@ -106,7 +105,7 @@ void simulate_nl_nl_correspondences(const Sophus::SO3<T>& R_cw_, int number_, T 
 			pN_->col(i).normalize();
 		} while (acos(pN_->col(i)(2)) < T(M_PI / 2)); //ensure that the normal is facing the camera
 		//simulate weights
-		w(i) = short(pN_->col(i).dot(N_gt.col(i)) * numeric_limits<short>::max());
+		w(i) = pN_->col(i).dot(N_gt.col(i));
 	}
 	//add outliers
 	int out = int(outlier_ratio_nl_*number_ + T(.5));
@@ -179,17 +178,16 @@ void simulate_2d_3d_correspondences(const Sophus::SO3<T>& R_cw_, const Matrix<T,
 	Matrix<T, Dynamic, Dynamic>* pQ_, // *pQ_: points with noise in 3-D world system 
 	Matrix<T, Dynamic, Dynamic>* pU_, // *pU_: 2-D points 
 	Matrix<T, Dynamic, Dynamic>* pP_gt = NULL, // *pP_gt: ground truth of 3-D points in camera system 
-	Matrix<short, Dynamic, Dynamic>* p_all_weights_ = NULL)
+	Matrix<T, Dynamic, Dynamic>* p_all_weights_ = NULL)
 {
 	typedef Matrix<T, Dynamic, Dynamic> MX;
-	typedef Matrix<short, Dynamic, Dynamic> MXs;
 
-	MXs w(number_, 1); //dynamic weights for 2-3 correspondences
+	MX w(number_, 1); //dynamic weights for 2-3 correspondences
 	//1. generate 3-D points P in CRS
 	MX P_gt = simulate_rand_point_cloud_in_frustum<T>(number_, f_, min_depth_, max_depth_); //pt cloud in camera system
 	//2. project to 2-D 
 	MX kp_2d = project_point_cloud<T>(P_gt, f_);
-	//3. transform from camera to world coordinate system
+	//3. transform from world to camera coordinate system
 	pQ_->resize(3, number_);
 	for (int i = 0; i < number_; i++) {
 		pQ_->col(i) = R_cw_.inverse() * (P_gt.col(i) - t_w_);
@@ -201,7 +199,7 @@ void simulate_2d_3d_correspondences(const Sophus::SO3<T>& R_cw_, const Matrix<T,
 			rv = Matrix<T, 2, 1>(distribution(generator), distribution(generator));
 		else
 			rv = MX::Random(2, 1);
-		w(i) = short(3276. / rv.norm());
+		w(i) = T(1.) / rv.norm();
 		kp_2d.col(i) = kp_2d.col(i) + noise_ * rv;
 	}
 
@@ -240,12 +238,11 @@ void simulate_3d_3d_correspondences(const Sophus::SO3<T>& R_cw_, const Matrix<T,
 	int number_, T noise_, T outlier_ratio_, T min_depth_, T max_depth_, T f_, bool use_guassian_,
 	Matrix<T, Dynamic, Dynamic>* pQ_, // *pQ_: points with noise in 3-D world system 
 	Matrix<T, Dynamic, Dynamic>* pP_gt = NULL, // *pP_gt: ground truth of 3-D points in camera system 
-	Matrix<short, Dynamic, Dynamic>* p_all_weights_ = NULL)
+	Matrix<T, Dynamic, Dynamic>* p_all_weights_ = NULL)
 {
 	typedef Matrix<T, Dynamic, Dynamic> MX;
-	typedef Matrix<short, Dynamic, Dynamic> MXs;
 
-	MXs w(number_, 1); //dynamic weights for 2-3 correspondences
+	MX w(number_, 1); //dynamic weights for 2-3 correspondences
 	//1. generate 3-D points P in CRS
 	MX P_gt = simulate_rand_point_cloud_in_frustum<T>(number_, f_, min_depth_, max_depth_); //pt cloud in camera system
 	//3. transform from camera to world coordinate system
@@ -260,7 +257,7 @@ void simulate_3d_3d_correspondences(const Sophus::SO3<T>& R_cw_, const Matrix<T,
 			rv = Matrix<T, 3, 1>(distribution(generator), distribution(generator), distribution(generator));
 		else
 			rv = MX::Random(3, 1);
-		w(i) = short(3276. / rv.norm());
+		w(i) = T(1.) / rv.norm();
 		pQ_->col(i) = pQ_->col(i) + noise_*rv;
 	}
 
@@ -295,9 +292,9 @@ void simulate_2d_3d_nl_correspondences(const Sophus::SO3<T>& R_cw_, const Matrix
 	Matrix<T, Dynamic, Dynamic>* pQ_, Matrix<T, Dynamic, Dynamic>* pM_, //Q and M are 3-D points and normal in world 
 	Matrix<T, Dynamic, Dynamic>* pP_, Matrix<T, Dynamic, Dynamic>* pN_, //P and N are 3-D points and normal in camera system
 	Matrix<T, Dynamic, Dynamic>* pU_,//U are the unit vectors pointing from camera centre to 2-D key points
-	Matrix<short, Dynamic, Dynamic>* p_all_weights_ = NULL) //store all weights for 2-3, 3-3 and N-N correspondences
+	Matrix<T, Dynamic, Dynamic>* p_all_weights_ = NULL) //store all weights for 2-3, 3-3 and N-N correspondences
 {
-	Matrix<short, Dynamic, Dynamic> all_weights(number_, 3);
+	Matrix<T, Dynamic, Dynamic> all_weights(number_, 3);
 	//generate 2-D to 3-D pairs
 	Matrix<T, Dynamic, Dynamic> P_gt; //ground truth 3-D points in camera reference system
 	simulate_2d_3d_correspondences<T>(R_cw_, t_w_, number_, n2D_, or_2D_, min_depth_, max_depth_, f_, use_guassian_,
@@ -316,7 +313,7 @@ void simulate_2d_3d_nl_correspondences(const Sophus::SO3<T>& R_cw_, const Matrix
 		else
 			rv = Matrix<T, Dynamic, Dynamic>::Random(3, 1);
 		//all_weights(i, 1) = short(rv.norm() / 1.414 * numeric_limits<short>::max()); //simulate weights
-		all_weights(i, 1) = short(3276. / rv.norm());
+		all_weights(i, 1) = T(1.) / rv.norm();
 		pP_->col(i) = P_gt.col(i) + n3D_ * rv;
 	}
 
@@ -365,9 +362,9 @@ void simulate_kinect_2d_3d_nl_correspondences(const Sophus::SO3<T>& R_cw_, const
 	Matrix<T, Dynamic, Dynamic>* p_pt_c_, 
 	Matrix<T, Dynamic, Dynamic>* p_nl_c_, 
 	Matrix<T, Dynamic, Dynamic>* p_bv_,
-	Matrix<short, Dynamic, Dynamic>* p_weights_ = NULL)
+	Matrix<T, Dynamic, Dynamic>* p_weights_ = NULL)
 {
-	Matrix<short, Dynamic, Dynamic> all_weights(number_, 3); //simulated weights
+	Matrix<T, Dynamic, Dynamic> all_weights(number_, 3); //simulated weights
 	Matrix<T, Dynamic, Dynamic> pt_c_gt; //ground truth 3-D points in camera reference system
 	simulate_2d_3d_correspondences<T>(R_cw_, t_w_, number_, noise_2d_, outlier_ratio_2d_, min_depth_, max_depth_, f_, true,
 							&*p_pt_w_, &*p_bv_, &pt_c_gt, &all_weights);
@@ -387,7 +384,7 @@ void simulate_kinect_2d_3d_nl_correspondences(const Sophus::SO3<T>& R_cw_, const
 		T sigma_a = axial_noise_kinect<T>(theta, z);
 		Matrix<T, 3, 1> random_variable(sigma_l*distribution(generator), sigma_l*distribution(generator), sigma_a*distribution(generator));
 		p_pt_c_->col(i) = pt_c_gt.col(i) + random_variable;
-		all_weights(i, 1) = short(sigma_min / sigma_a * numeric_limits<short>::max());
+		all_weights(i, 1) = T(sigma_min / sigma_a);
 	}
 
 	//add 3-D outliers

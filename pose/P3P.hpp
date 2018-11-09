@@ -385,8 +385,85 @@ void kneip_ransac( PnPPoseAdapter<Tp>& adapter,	const Tp thre_2d_, int& Iter, Tp
 	return;
 }
 
+
 template< typename Tp > /*Eigen::Matrix<float,-1,-1,0,-1,-1> = Eigen::MatrixXf*/
-void lsq_pnp( PnPPoseAdapter<Tp>& adapter,	int& Iter){
+void kneip_prosac( PnPPoseAdapter<Tp>& adapter,	const Tp thre_2d_, int& Iter, Tp confidence = 0.99){
+
+	Tp cos_thr = cos(atan(thre_2d_ / adapter.getFocal()));
+
+	typedef Sophus::SE3<Tp> RT;
+	typedef Matrix<Tp, 3, 1> Point3;
+
+	adapter.sortIdx();
+
+	RandomElements<int> re(adapter.getNumberCorrespondences());
+	const int K = 4;
+	adapter.setMaxVotes(-1);
+	for (int i = 0; i < Iter; i++)	{
+		//randomly select K candidates
+		vector<int> selected_cols;
+		re.run(K, &selected_cols);
+
+		vector< RT > solutions = kneip<Tp>(adapter, selected_cols[0], selected_cols[1], selected_cols[2]);
+		//use the fourth point to verify the estimation.
+		Tp minScore = 1000000.0;
+		int minIndex = -1;
+		for (int i = 0; i < (int)solutions.size(); i++)
+		{
+			Point3 pw = adapter.getPointGlob(selected_cols[3]);
+			Point3 pc = solutions[i].so3() * pw + solutions[i].translation();// transform pw into pc
+			pc = pc / pc.norm(); //normalize pc
+
+			//compute the score
+			Tp score = 1.0 - pc.transpose() * adapter.getBearingVector(selected_cols[3]);
+
+			//check for best solution
+			if (score < minScore) {
+				minScore = score;
+				minIndex = i;
+			}
+		}
+
+		if (minIndex != -1){
+			const RT& outModel = solutions[minIndex];
+
+			Matrix<short, Dynamic, Dynamic> inliers(adapter.getNumberCorrespondences(), 1);
+			inliers.setZero();
+			int votes = 0;
+			for (int i = 0; i < adapter.getNumberCorrespondences(); i++)
+			{
+				Point3 Xw = adapter.getPointGlob(i);
+				Point3 Xc = outModel.so3() * Xw + outModel.translation();// transform pw into pc
+				Xc = Xc / Xc.norm(); //normalize pc
+
+				//compute the score
+				Tp cos_a = Xc.dot( adapter.getBearingVector(i) );
+
+				//check for best solution
+				if (cos_a > cos_thr) {
+					inliers(i) = 1;
+					votes++;
+				}
+			}
+
+			if (votes > adapter.getMaxVotes()){
+				adapter.setMaxVotes(votes);
+				adapter.setRcw(outModel.so3());
+				adapter.sett(outModel.translation());
+				adapter.setInlier(inliers);
+				Iter = RANSACUpdateNumIters(confidence, (Tp)(adapter.getNumberCorrespondences() - votes) / adapter.getNumberCorrespondences(), K+1, Iter);
+			}
+		}
+		//update iterations
+	}
+	adapter.cvtInlier();
+
+	return;
+}
+
+
+template< typename Tp > /*Eigen::Matrix<float,-1,-1,0,-1,-1> = Eigen::MatrixXf*/
+void lsq_pnp( PnPPoseAdapter<Tp>& adapter){
 	// typedef Sophus::SE3<Tp> RT;
 	typedef Matrix<Tp, 3, 1> Point3;
 

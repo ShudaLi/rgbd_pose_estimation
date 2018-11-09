@@ -78,7 +78,7 @@ public:
   virtual Point3 getPointCurr( int index ) const;
   virtual bool isValid( int index ) const;
   virtual void setInlier(const Matrix<short, Dynamic, Dynamic>& inliers);
-  virtual void setWeights(const Matrix<short, Dynamic, Dynamic>& weights);
+  virtual void setWeights(const Matrix<Tp, Dynamic, Dynamic>& weights);
   virtual void printInlier() const;
   const vector<short>& getInlierIdx() const { return _vInliersAO; }
   void cvtInlier();
@@ -88,7 +88,7 @@ protected:
   const MatrixX & _points_c; 
   /** flags of inliers. */
   Matrix<short, Dynamic, 1> _inliers_3d;
-  Matrix<short, Dynamic, 1> _weights_3d;
+  Matrix<Tp, Dynamic, 1> _weights_3d;
   vector<short> _vInliersAO;
 };
 
@@ -184,7 +184,7 @@ void AOPoseAdapter<Tp>::setInlier(const Matrix<short, Dynamic, Dynamic>& inliers
 }
 
 template <typename Tp>
-void AOPoseAdapter<Tp>::setWeights(const Matrix<short, Dynamic, Dynamic>& weights)
+void AOPoseAdapter<Tp>::setWeights(const Matrix<Tp, Dynamic, Dynamic>& weights)
 {
 	if (weights.rows() == 1){
 		PnPPoseAdapter<Tp>::setWeights(weights);
