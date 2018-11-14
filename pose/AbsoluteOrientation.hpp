@@ -437,5 +437,81 @@ void shinji_kneip_ransac(AOPoseAdapter<Tp>& adapter, const Tp dist_thre_3d_, con
 	return;
 }
 
+template< typename Tp >
+void shinji_kneip_prosac(AOPoseAdapter<Tp>& adapter, const Tp dist_thre_3d_, const Tp thre_2d_, int& Iter, Tp confidence = 0.99){
+	typedef Matrix<Tp, Dynamic, Dynamic> MatrixX;
+	typedef Matrix<Tp, 3, 1> Point3;
+	typedef Sophus::SE3<Tp> RT;
+
+	const Tp cos_thr = cos(atan(thre_2d_ / adapter.getFocal()));
+
+	RandomElements<int> re((int)adapter.getNumberCorrespondences());
+	const int K = 3;
+	MatrixX X_w(3, K + 1), X_c(3, K + 1), bv(3, K + 1);
+	Matrix<short, Dynamic, Dynamic> inliers(adapter.getNumberCorrespondences(), 2);
+
+	adapter.sortIdx();
+	ProsacSampler<Tp> ps(K+1, adapter.getNumberCorrespondences());
+
+	adapter.setMaxVotes(-1);
+	for (int ii = 0; ii < Iter; ii++)	{
+		RT solution_kneip, solution_shinji;
+		vector<RT> v_solutions;
+		//randomly select K candidates
+		vector<int> selected_cols;
+		ps.sample(&selected_cols);
+		adapter.getSortedIdx(selected_cols);
+
+		if (assign_sample<Tp>(adapter, selected_cols, &X_w, &X_c, &bv)){
+			solution_shinji = shinji<Tp>(X_w, X_c, K);
+			v_solutions.push_back(solution_shinji);
+		}
+
+		if (kneip<Tp>(X_w, bv, &solution_kneip)){
+			v_solutions.push_back(solution_kneip);
+		}
+
+		for (typename vector<RT>::iterator itr = v_solutions.begin(); itr != v_solutions.end(); ++itr) {
+			//collect votes
+			int votes = 0;
+			inliers.setZero();
+			Point3 eivE; Point3 pc; Tp cos_a;
+
+			for (int c = 0; c < adapter.getNumberCorrespondences(); c++) {
+				// voted by 3-3 correspondences
+				if (adapter.isValid(c)){
+					eivE = adapter.getPointCurr(c) - (itr->so3() * adapter.getPointGlob(c) + itr->translation());
+					if (eivE.norm() < dist_thre_3d_){
+						inliers(c, 1) = 1;
+						votes++;
+					}
+				}
+				// voted by 2-3 correspondences
+				pc = itr->so3() * adapter.getPointGlob(c) + itr->translation();// transform pw into pc
+				pc = pc / pc.norm(); //normalize pc
+
+				//compute the score
+				cos_a = pc.transpose() * adapter.getBearingVector(c);
+				if (cos_a > cos_thr){
+					inliers(c, 0) = 1;
+					votes++;
+				}
+			}
+
+			if (votes > adapter.getMaxVotes()){
+				adapter.setMaxVotes(votes);
+				adapter.setRcw(itr->so3());
+				adapter.sett(itr->translation());
+				adapter.setInlier(inliers);
+				Iter = RANSACUpdateNumIters(confidence, (Tp)(adapter.getNumberCorrespondences() * 2 - votes) / adapter.getNumberCorrespondences() / 2, K, Iter);
+			}
+		}
+	}
+	PnPPoseAdapter<Tp>* pAdapter = &adapter;
+	pAdapter->cvtInlier();
+	adapter.cvtInlier();
+
+	return;
+}
 
 #endif

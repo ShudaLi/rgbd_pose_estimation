@@ -232,6 +232,38 @@ void simulate_2d_3d_correspondences(const Sophus::SO3<T>& R_cw_, const Matrix<T,
 	return;
 }
 
+template< typename T >
+void simulate_2d_3d_3d_correspondences(const Sophus::SO3<T>& R_cw_, const Matrix<T, 3, 1>& t_w_,
+	int number_, T noise_2d_, T noise_3d_, T outlier_ratio_, T min_depth_, T max_depth_, T f_, bool use_guassian_,
+	Matrix<T, Dynamic, Dynamic>* pQ_, // *pQ_: points with noise in 3-D world system 
+	Matrix<T, Dynamic, Dynamic>* pU_, // *pU_: 2-D points 
+	Matrix<T, Dynamic, Dynamic>* pP_gt = NULL, // *pP_gt: ground truth of 3-D points in camera system 
+	Matrix<T, Dynamic, Dynamic>* p_all_weights_ = NULL)
+{
+	typedef Matrix<T, Dynamic, Dynamic> MX;
+	simulate_2d_3d_correspondences<T>(R_cw_, t_w_, number_, noise_2d_, outlier_ratio_, min_depth_, max_depth_, f_, use_guassian_,
+                pQ_, pU_, pP_gt, p_all_weights_);
+
+	MX w(number_, 1); //dynamic weights for 2-3 correspondences
+	//1. generate 3-D points P in CRS
+	//4. add 3-D noise
+	for (int i = 0; i < number_; i++) {
+		Matrix<T, 3, 1> rv; //random variable
+		if (use_guassian_)
+			rv = Matrix<T, 3, 1>(distribution(generator), distribution(generator), distribution(generator));
+		else
+			rv = MX::Random(3, 1);
+		w(i) = T(1.) / rv.norm();
+		pQ_->col(i) = pQ_->col(i) + noise_3d_*rv;
+	}
+
+	if (p_all_weights_){
+		assert(p_all_weights_->rows() == number_ && p_all_weights_->cols() == 3);
+		p_all_weights_->col(1) = w;
+	}
+	return;
+}
+
 
 template< typename T >
 void simulate_3d_3d_correspondences(const Sophus::SO3<T>& R_cw_, const Matrix<T, 3, 1>& t_w_,
