@@ -401,7 +401,6 @@ void kneip_prosac( PnPPoseAdapter<Tp>& adapter,	const Tp thre_2d_, int& Iter, Tp
 	typedef Matrix<Tp, 3, 1> Point3;
 
 	adapter.sortIdx();
-
 	const int K = 4;
 	ProsacSampler<Tp> ps(K, adapter.getNumberCorrespondences());
 	adapter.setMaxVotes(-1);

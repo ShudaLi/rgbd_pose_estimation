@@ -83,18 +83,20 @@ public:
 
   virtual bool isValid( int index ) const;
   virtual void setInlier(const Matrix<short, Dynamic, Dynamic>& inliers);
-  virtual void setWeights(const Matrix<short, Dynamic, Dynamic>& weights);
+  virtual void setWeights(const Matrix<Tp, Dynamic, Dynamic>& weights);
   virtual void printInlier() const;
   const vector<short>& getInlierIdx() const { return _vInliersAO; }
   void cvtInlier();
-
+  void sortIdx();
+  void getSortedIdx(vector<int>& select_) const;
 protected:
   /** Reference to the 3-D points in the camera-frame */
   const MatrixX & _points_c; 
   const MatrixX & _points_g; 
   /** flags of inliers. */
   Matrix<short, Dynamic, 1> _inliers_3d;
-  Matrix<short, Dynamic, 1> _weights_3d;
+  Matrix<Tp, Dynamic, 1> _weights_3d;
+  vector<int> _idx; //stores the sorted index 
   vector<short> _vInliersAO;
   int _max_votes;
 };
@@ -176,7 +178,7 @@ Tp AOOnlyPoseAdapter<Tp>::weight33(int index) const
 	if (!_weights_3d.rows()) return Tp(1.0);
 	else{
 		assert(index < _weights_3d.rows());
-		return Tp(_weights_3d(index)) / numeric_limits<short>::max();
+		return _weights_3d(index);
 	}
 }
 
@@ -196,7 +198,7 @@ void AOOnlyPoseAdapter<Tp>::setInlier(const Matrix<short, Dynamic, Dynamic>& inl
 }
 
 template <typename Tp>
-void AOOnlyPoseAdapter<Tp>::setWeights(const Matrix<short, Dynamic, Dynamic>& weights)
+void AOOnlyPoseAdapter<Tp>::setWeights(const Matrix<Tp, Dynamic, Dynamic>& weights)
 {
 	if (weights.rows() == 1){
 		// PnPPoseAdapter<Tp>::setWeights(weights);
@@ -227,5 +229,29 @@ void AOOnlyPoseAdapter<Tp>::cvtInlier()
 		}
 	}
 }
+
+template <typename Tp>
+void AOOnlyPoseAdapter<Tp>::sortIdx(){
+    //sort the index according to weights 
+    vector<Tp> weigh(_weights_3d.data(), _weights_3d.data() + _weights_3d.rows() * _weights_3d.cols());
+    _idx = sortIndexes<Tp>( weigh );
+    // for (int i = 0; i < _idx.size(); ++i)
+    // {
+    //     cout << _weights_3d.data()[_idx[i]] << " ";
+    // }
+    // cout << endl;
+}
+
+template <typename Tp>
+void AOOnlyPoseAdapter<Tp>::getSortedIdx(vector<int>& select_) const{
+    //sort the index according to weights 
+    for (int i = 0; i < (int)select_.size(); ++i)
+    {
+        int j = select_[i];
+        if(j < (int)_idx.size())
+            select_[i] = _idx[j];
+    }
+}
+
 
 #endif 

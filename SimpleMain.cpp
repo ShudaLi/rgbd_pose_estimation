@@ -30,19 +30,19 @@ void test_3d_3d(){
     int total = 100;
 
     data_type  or_3d = 0.1; //outlier
-    data_type  n3d = 0.02; //3-D noise
+    data_type  n3d = 0.1; //3-D noise
 
-    int iteration = 1000;
+    int iteration = 100000;
     int updated_iter = iteration;
-    int test_n = 100;
+    int test_n = 10;
     string noise_model = "Gaussian";
 
-    data_type thre_3d = 0.06; //meter
+    data_type thre_3d = 0.25; //meter
 
     data_type min_depth = 0.4;
     data_type max_depth = 8.; //for Gaussian or uniform noise
     data_type f = 585.;
-    data_type confidence = 0.99999;
+    data_type confidence = 0.9999;
     Matrix<data_type, -1, -1> e_s(2, test_n);
     Matrix<data_type, -1, -1> e_l(2, test_n);
 
@@ -67,20 +67,26 @@ void test_3d_3d(){
         adapter.setFocal(f, f);
         adapter.setWeights(all_weights);
         //estimate camera pose using shinji_ransac
-        cout << adapter.getMaxVotes() << endl;
         updated_iter = iteration;
-        // shinji_ransac2<data_type>(adapter, thre_3d, updated_iter, confidence);
         shinji_prosac<data_type>(adapter, thre_3d, updated_iter, confidence);
+        cout << "prosac max " << adapter.getMaxVotes() << endl;
+        cout << "prosac it " << updated_iter << endl;
+        shinji_ls1<data_type>(adapter);
         e_s.col(jj) = calc_percentage_err<data_type>(R, t, &adapter);
+
+        updated_iter = iteration;
+        shinji_ransac2<data_type>(adapter, thre_3d, updated_iter, confidence);
+        cout << "ransac max " << adapter.getMaxVotes() << endl;
+        cout << "ransac it " << updated_iter << endl;
+        cout << endl;
         shinji_ls1<data_type>(adapter);
         e_l.col(jj) = calc_percentage_err<data_type>(R, t, &adapter);
-
     }
 
-    cout << "t" << "_s =[" << e_s.row(0) << "]';" << endl;
-    cout << "t" << "_s =[" << e_l.row(0) << "]';" << endl;
-    cout << "r" << "_s =[" << e_s.row(1) << "]';" << endl;
-    cout << "r" << "_s =[" << e_l.row(1) << "]';" << endl;
+    cout << "prosac t" << "_s =[" << e_s.row(0) << "]';" << endl;
+    cout << "prosac r" << "_s =[" << e_s.row(1) << "]';" << endl;
+    cout << "ransac t" << "_l =[" << e_l.row(0) << "]';" << endl;
+    cout << "ransac r" << "_l =[" << e_l.row(1) << "]';" << endl;
     cout << endl;
 
     return;
@@ -146,12 +152,12 @@ void test_3d_2d(){
         kneip_ransac<data_type>(adapter, thre_2d, updated_iter, confidence);
         cout << "ransac max " << adapter.getMaxVotes() << endl;
         cout << "ransac it " << updated_iter << endl;
+        cout << endl;
         e_l.col(jj) = calc_percentage_err<data_type>(R, t, &adapter);
     }
 
     cout << "t" << "_s =[" << e_s.row(0) << "]';" << endl;
     cout << "r" << "_s =[" << e_s.row(1) << "]';" << endl;
-    cout << endl;
 
     cout << "t" << "_l =[" << e_l.row(0) << "]';" << endl;
     cout << "r" << "_l =[" << e_l.row(1) << "]';" << endl;
@@ -177,8 +183,8 @@ void test_prosac(){
 int main()
 {
     // test_prosac();
-    test_3d_2d();
-    // test_3d_3d();
+    // test_3d_2d();
+    test_3d_3d();
 
     return 0;
 }

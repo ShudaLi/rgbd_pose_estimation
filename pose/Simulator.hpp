@@ -276,7 +276,7 @@ void simulate_3d_3d_correspondences(const Sophus::SO3<T>& R_cw_, const Matrix<T,
 
 	if (p_all_weights_){
 		assert(p_all_weights_->rows() == number_ && p_all_weights_->cols() == 3);
-		p_all_weights_->col(0) = w;
+		p_all_weights_->col(1) = w;
 	}
 	return;
 }

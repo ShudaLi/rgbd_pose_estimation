@@ -215,17 +215,19 @@ void shinji_ransac2(AOOnlyPoseAdapter<Tp>& adapter,
 template< typename Tp >
 void shinji_prosac(AOOnlyPoseAdapter<Tp>& adapter, const Tp dist_thre_3d_, int& Iter, Tp confidence = 0.99){
 	typedef Matrix<Tp, Dynamic, Dynamic> MatrixX;
-	typedef Matrix<Tp, 3, 1> Point3;
 	typedef Sophus::SE3<Tp> RT;
+	typedef Matrix<Tp, 3, 1> Point3;
 
-	RandomElements<int> re((int)adapter.getNumberCorrespondences());
+	adapter.sortIdx();
 	const int K = 3;
-
+	ProsacSampler<Tp> ps(K, adapter.getNumberCorrespondences());
 	adapter.setMaxVotes(-1);
 	for (int ii = 0; ii < Iter; ii++)	{
 		//randomly select K candidates
 		vector<int> selected_cols;
-		re.run(K, &selected_cols);
+		ps.sample(&selected_cols);
+		adapter.getSortedIdx(selected_cols);
+
 		MatrixX eimX_world(3, K), eimX_cam(3, K), bv(3, K);
 		bool invalid_sample = false;
 		for (int nSample = 0; nSample < K; nSample++) {
