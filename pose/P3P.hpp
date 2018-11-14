@@ -225,6 +225,7 @@ void kneip_main(const Matrix<Tp, Dynamic, Dynamic>& X_w, const Matrix<Tp, Dynami
 
 		//R = N.transpose()*R.transpose()*RR;
 		R = RR.transpose()*R*N;
+		if ( R(0,0)!=R(0,0) ) continue;
 
 		p_solutions_->push_back(Sophus::SE3<Tp>(Sophus::SO3<Tp>(R), -R*C));
 	}
@@ -308,7 +309,11 @@ int RANSACUpdateNumIters(T p, T ep, const int modelPoints, const int maxIters)
 
 	num = std::log(num);
 	denom = std::log(denom);
-
+	// cout << "p " << p << endl;
+	// cout << "ep " << ep << endl;
+	// cout << "denom " << denom << endl;
+	// cout << "num " << num << endl;
+	// cout << "maxIters " << maxIters << endl;
 	return denom >= 0 || -num >= maxIters*(-denom) ? maxIters : int(num / denom+0.5f);
 }
 
@@ -375,7 +380,8 @@ void kneip_ransac( PnPPoseAdapter<Tp>& adapter,	const Tp thre_2d_, int& Iter, Tp
 				adapter.setRcw(outModel.so3());
 				adapter.sett(outModel.translation());
 				adapter.setInlier(inliers);
-				Iter = RANSACUpdateNumIters(confidence, (Tp)(adapter.getNumberCorrespondences() - votes) / adapter.getNumberCorrespondences(), K+1, Iter);
+				Iter = RANSACUpdateNumIters(confidence, (Tp)(adapter.getNumberCorrespondences() - votes) / adapter.getNumberCorrespondences(), K, Iter);
+				// cout << "ransac " << Iter << endl;
 			}
 		}
 		//update iterations
@@ -386,7 +392,7 @@ void kneip_ransac( PnPPoseAdapter<Tp>& adapter,	const Tp thre_2d_, int& Iter, Tp
 }
 
 
-template< typename Tp > /*Eigen::Matrix<float,-1,-1,0,-1,-1> = Eigen::MatrixXf*/
+template< typename Tp > 
 void kneip_prosac( PnPPoseAdapter<Tp>& adapter,	const Tp thre_2d_, int& Iter, Tp confidence = 0.99){
 
 	Tp cos_thr = cos(atan(thre_2d_ / adapter.getFocal()));
@@ -452,7 +458,8 @@ void kneip_prosac( PnPPoseAdapter<Tp>& adapter,	const Tp thre_2d_, int& Iter, Tp
 				adapter.setRcw(outModel.so3());
 				adapter.sett(outModel.translation());
 				adapter.setInlier(inliers);
-				Iter = RANSACUpdateNumIters(confidence, (Tp)(adapter.getNumberCorrespondences() - votes) / adapter.getNumberCorrespondences(), K+1, Iter);
+				Iter = RANSACUpdateNumIters(confidence, (Tp)(adapter.getNumberCorrespondences() - votes) / adapter.getNumberCorrespondences(), K, Iter);
+				// cout << "prosac " << Iter << endl;
 			}
 		}
 		//update iterations
