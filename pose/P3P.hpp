@@ -259,7 +259,7 @@ bool kneip(const Matrix<Tp, Dynamic, Dynamic>& X_w_, const Matrix<Tp, Dynamic, D
 	int minIndex = -1;
 	for (int i = 0; i < (int)v_solutions.size(); i++)
 	{
-		Point3 pc = v_solutions[i].so3() * X_w_.col(3) + v_solutions[i].translation();// transform pw into pc
+		Point3 pc = v_solutions[i].so3().matrix() * X_w_.col(3) + v_solutions[i].translation();// transform pw into pc
 
 		//compute the score
 		//Vector3 E = pc - adapter.getPointCurr(selected_cols[0]);
@@ -340,7 +340,7 @@ void kneip_ransac( PnPPoseAdapter<Tp>& adapter,	const Tp thre_2d_, int& Iter, Tp
 		for (int i = 0; i < (int)solutions.size(); i++)
 		{
 			Point3 pw = adapter.getPointGlob(selected_cols[3]);
-			Point3 pc = solutions[i].so3() * pw + solutions[i].translation();// transform pw into pc
+			Point3 pc = solutions[i].so3().matrix() * pw + solutions[i].translation();// transform pw into pc
 			pc = pc / pc.norm(); //normalize pc
 
 			//compute the score
@@ -362,7 +362,7 @@ void kneip_ransac( PnPPoseAdapter<Tp>& adapter,	const Tp thre_2d_, int& Iter, Tp
 			for (int i = 0; i < adapter.getNumberCorrespondences(); i++)
 			{
 				Point3 Xw = adapter.getPointGlob(i);
-				Point3 Xc = outModel.so3() * Xw + outModel.translation();// transform pw into pc
+				Point3 Xc = outModel.so3().matrix() * Xw + outModel.translation();// transform pw into pc
 				Xc = Xc / Xc.norm(); //normalize pc
 
 				//compute the score
@@ -417,7 +417,7 @@ void kneip_prosac( PnPPoseAdapter<Tp>& adapter,	const Tp thre_2d_, int& Iter, Tp
 		for (int i = 0; i < (int)solutions.size(); i++)
 		{
 			Point3 pw = adapter.getPointGlob(selected_cols[3]);
-			Point3 pc = solutions[i].so3() * pw + solutions[i].translation();// transform pw into pc
+			Point3 pc = solutions[i].so3().matrix() * pw + solutions[i].translation();// transform pw into pc
 			pc = pc / pc.norm(); //normalize pc
 
 			//compute the score
