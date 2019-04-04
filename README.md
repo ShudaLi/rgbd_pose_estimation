@@ -5,7 +5,7 @@ Update notes:
 * Remove dependency on boost library.
 * Fix a few bugs in the testing example.
 
-
+  
 Release highlights:
 --------------
 * It is a header only library. (No linking required)
